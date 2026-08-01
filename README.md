@@ -51,7 +51,31 @@ Label:
 
 ## Setup
 
-### Backend
+### Local Development (Recommended for Testing)
+<!-- Trigger deployment after GitHub secret added -->
+
+A local development version is available in the `local/` folder with simplified dependencies for easy testing.
+
+```bash
+cd local
+python -m venv venv
+venv\Scripts\activate   # Windows
+pip install -r requirements.txt
+
+# Environment variables are already configured in .env file
+# Database: SQLite (smartfinance_local.db)
+# Environment: development
+
+# Run the application
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Access the API at:
+- Base URL: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+
+### Backend (Full Version with AI Features)
 ```bash
 cd backend
 python -m venv venv
