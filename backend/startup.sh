@@ -4,6 +4,9 @@
 # Set environment variables
 export PYTHONPATH="/home/site/wwwroot"
 
+# Navigate to backend directory
+cd /home/site/wwwroot
+
 # Install dependencies if needed
 if [ ! -d "venv" ]; then
     python -m venv venv
