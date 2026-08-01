@@ -27,8 +27,8 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # Configure CORS based on environment
 if ENVIRONMENT == "production":
-    # Production: Only allow specific frontend domain
-    allowed_origins = [FRONTEND_URL]
+    # Production: Allow specific frontend domain and Azure Static Web Apps
+    allowed_origins = [FRONTEND_URL, "https://calm-rock-018756a00.7.azurestaticapps.net"]
 else:
     # Development: Allow localhost for testing
     allowed_origins = [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"]
