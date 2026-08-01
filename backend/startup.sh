@@ -7,5 +7,5 @@ cd /home/site/wwwroot/backend
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the application (Azure provides PORT environment variable)
-python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Run the application with gunicorn
+gunicorn main:app --bind 0.0.0.0:8000 --workers 1 --timeout 120
