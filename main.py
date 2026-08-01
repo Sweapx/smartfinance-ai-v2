@@ -22,22 +22,17 @@ app = FastAPI(
     version="2.0.0",
 )
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+# Configure CORS - Allow both local development and Azure Static Web Apps
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://calm-rock-018756a00.7.azurestaticapps.net"
+]
 
-# Configure CORS based on environment
-if ENVIRONMENT == "production":
-    # Production: Allow specific frontend domain and Azure Static Web Apps
-    allowed_origins = [FRONTEND_URL, "https://calm-rock-018756a00.7.azurestaticapps.net"]
-else:
-    # Development: Allow localhost for testing
-    allowed_origins = [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"]
-
-# Always allow Azure Static Web Apps origin regardless of environment
-# This ensures the deployed frontend can always connect to the backend
-azure_frontend_url = "https://calm-rock-018756a00.7.azurestaticapps.net"
-if azure_frontend_url not in allowed_origins:
-    allowed_origins.append(azure_frontend_url)
+# Also allow any custom FRONTEND_URL if set in environment
+custom_frontend_url = os.getenv("FRONTEND_URL")
+if custom_frontend_url and custom_frontend_url not in allowed_origins:
+    allowed_origins.append(custom_frontend_url)
 
 # Log the allowed origins for debugging
 logger.info(f"CORS allowed origins: {allowed_origins}")
