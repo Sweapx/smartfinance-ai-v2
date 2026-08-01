@@ -52,7 +52,7 @@ Label:
 ## Setup
 
 ### Local Development (Recommended for Testing)
-<!-- Trigger deployment after GitHub secret added -->
+<!-- Trigger redeployment for missing JS assets -->
 
 A local development version is available in the `local/` folder with simplified dependencies for easy testing.
 
