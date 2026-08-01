@@ -33,6 +33,15 @@ else:
     # Development: Allow localhost for testing
     allowed_origins = [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"]
 
+# Always allow Azure Static Web Apps origin regardless of environment
+# This ensures the deployed frontend can always connect to the backend
+azure_frontend_url = "https://calm-rock-018756a00.7.azurestaticapps.net"
+if azure_frontend_url not in allowed_origins:
+    allowed_origins.append(azure_frontend_url)
+
+# Log the allowed origins for debugging
+logger.info(f"CORS allowed origins: {allowed_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
