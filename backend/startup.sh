@@ -2,10 +2,10 @@
 # Startup script for Azure App Service
 
 # Set environment variables
-export PYTHONPATH="/home/site/wwwroot"
+export PYTHONPATH="/home/site/wwwroot/backend"
 
 # Navigate to backend directory
-cd /home/site/wwwroot
+cd /home/site/wwwroot/backend
 
 # Install dependencies if needed
 if [ ! -d "venv" ]; then
