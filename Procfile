@@ -1,1 +1,1 @@
-web: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000
+web: gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --chdir backend main:app
