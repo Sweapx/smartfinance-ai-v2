@@ -16,7 +16,7 @@ export default function BudgetPage() {
     try {
       const { data } = await api.get("/budget");
       setBudget(data);
-      setFormBudget(data.monthly_budget.toString());
+      setFormBudget((data?.monthly_budget ?? 0).toString());
     } catch (e) {
       console.error(e);
       setError("Gagal memuat data budget");
@@ -64,18 +64,19 @@ export default function BudgetPage() {
     );
   }
 
-  const isOverBudget = budget.budget_percentage > 100;
-  const isNearLimit = budget.budget_percentage > 80 && budget.budget_percentage <= 100;
+  const budgetPct = budget?.budget_percentage ?? 0;
+  const isOverBudget = budgetPct > 100;
+  const isNearLimit = budgetPct > 80 && budgetPct <= 100;
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="bg-white rounded-xl border border-[#dcd9d5] p-6 shadow-sm">
+      <div className="bg-white rounded-xl border border-[#dcd9d5] p-4 md:p-6 shadow-sm">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="font-semibold text-[#28251d] text-lg flex items-center gap-2">
+            <h2 className="font-semibold text-[#28251d] text-base md:text-lg flex items-center gap-2">
               <Wallet size={20} className="text-[#01696f]" /> Pengaturan Anggaran Bulanan
             </h2>
-            <p className="text-sm text-[#7a7974] mt-1">Atur batas pengeluaran bulanan Anda untuk kontrol keuangan yang lebih baik</p>
+            <p className="text-xs md:text-sm text-[#7a7974] mt-1">Atur batas pengeluaran bulanan Anda untuk kontrol keuangan yang lebih baik</p>
           </div>
           <button onClick={fetchBudget} className="p-2 rounded-lg hover:bg-[#f3f0ec] text-[#7a7974]">
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
@@ -88,19 +89,19 @@ export default function BudgetPage() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-[#f9f8f5] rounded-lg p-4">
             <p className="text-xs text-[#7a7974] mb-1">Pemasukan Bulanan</p>
-            <p className="text-lg font-semibold text-[#28251d]">{formatRupiah(budget.monthly_income)}</p>
+            <p className="text-base md:text-lg font-semibold text-[#28251d]">{formatRupiah(budget?.monthly_income ?? 0)}</p>
           </div>
           <div className="bg-[#f9f8f5] rounded-lg p-4">
             <p className="text-xs text-[#7a7974] mb-1">Budget Bulanan</p>
-            <p className="text-lg font-semibold text-[#01696f]">{formatRupiah(budget.monthly_budget)}</p>
+            <p className="text-base md:text-lg font-semibold text-[#01696f]">{formatRupiah(budget?.monthly_budget ?? 0)}</p>
           </div>
           <div className="bg-[#f9f8f5] rounded-lg p-4">
             <p className="text-xs text-[#7a7974] mb-1">Sudah Digunakan</p>
-            <p className={`text-lg font-semibold ${isOverBudget ? "text-red-500" : "text-[#28251d]"}`}>
-              {formatRupiah(budget.budget_used)}
+            <p className={`text-base md:text-lg font-semibold ${isOverBudget ? "text-red-500" : "text-[#28251d]"}`}>
+              {formatRupiah(budget?.budget_used ?? 0)}
             </p>
           </div>
         </div>
@@ -109,7 +110,7 @@ export default function BudgetPage() {
           <div className="flex justify-between text-sm mb-2">
             <span className="text-[#7a7974]">Penggunaan Budget</span>
             <span className={`font-medium ${isOverBudget ? "text-red-500" : "text-[#28251d]"}`}>
-              {budget.budget_percentage.toFixed(1)}%
+              {budgetPct.toFixed(1)}%
             </span>
           </div>
           <div className="w-full bg-[#f3f0ec] rounded-full h-3">
@@ -117,12 +118,12 @@ export default function BudgetPage() {
               className={`h-3 rounded-full transition-all ${
                 isOverBudget ? "bg-red-500" : isNearLimit ? "bg-yellow-500" : "bg-[#01696f]"
               }`}
-              style={{ width: `${Math.min(100, budget.budget_percentage)}%` }}
+              style={{ width: `${Math.min(100, budgetPct)}%` }}
             />
           </div>
           <p className="text-xs text-[#7a7974] mt-2">
             Sisa budget: <span className={`font-medium ${isOverBudget ? "text-red-500" : "text-[#01696f]"}`}>
-              {formatRupiah(budget.budget_remaining)}
+              {formatRupiah(budget?.budget_remaining ?? 0)}
             </span>
           </p>
         </div>
@@ -132,7 +133,7 @@ export default function BudgetPage() {
             <label className="block text-sm font-medium text-[#28251d] mb-2">
               Atur Budget Bulanan Baru (Rp)
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="number"
                 value={formBudget}
@@ -143,12 +144,12 @@ export default function BudgetPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-sm font-medium disabled:opacity-60"
               >
                 <Save size={16} /> {saving ? "Menyimpan..." : "Simpan"}
               </button>
               <button
-                onClick={() => { setEditing(false); setFormBudget(budget.monthly_budget.toString()); setError(""); }}
+                onClick={() => { setEditing(false); setFormBudget((budget?.monthly_budget ?? 0).toString()); setError(""); }}
                 className="px-4 py-2.5 border border-[#d4d1ca] rounded-lg text-sm text-[#7a7974] hover:bg-[#f3f0ec]"
               >
                 Batal
@@ -163,7 +164,7 @@ export default function BudgetPage() {
             >
               <Wallet size={16} /> Edit Budget
             </button>
-            {budget.monthly_budget > 0 && (
+            {(budget?.monthly_budget ?? 0) > 0 && (
               <button
                 onClick={handleReset}
                 className="flex items-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium"
@@ -199,9 +200,9 @@ export default function BudgetPage() {
             isOverBudget ? "text-red-600" : isNearLimit ? "text-yellow-600" : "text-green-600"
           }`}>
             {isOverBudget
-              ? `Anda telah melebihi budget sebesar ${formatRupiah(Math.abs(budget.budget_remaining))}. Pertimbangkan untuk mengurangi pengeluaran bulan ini.`
+              ? `Anda telah melebihi budget sebesar ${formatRupiah(Math.abs(budget?.budget_remaining ?? 0))}. Pertimbangkan untuk mengurangi pengeluaran bulan ini.`
               : isNearLimit
-              ? `Sisa budget Anda ${formatRupiah(budget.budget_remaining)}. Pertimbangkan untuk berhati-hati dengan pengeluaran.`
+              ? `Sisa budget Anda ${formatRupiah(budget?.budget_remaining ?? 0)}. Pertimbangkan untuk berhati-hati dengan pengeluaran.`
               : `Pengeluaran Anda masih dalam batas budget. Pertahankan pengelolaan keuangan yang baik!`}
           </p>
         </div>
@@ -209,3 +210,4 @@ export default function BudgetPage() {
     </div>
   );
 }
+

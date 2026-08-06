@@ -68,11 +68,16 @@ export default function AllocationPage() {
                 <tbody className="divide-y divide-[#f3f0ec]">
                   {data?.breakdown?.map((row) => {
                     const c = STATUS_COLOR[row.status];
+                    const tipeStyle = row.tipe === "Needs" 
+                      ? "bg-green-100 text-green-800 border-green-200 font-semibold" 
+                      : row.tipe === "Wants" 
+                      ? "bg-orange-100 text-orange-800 border-orange-200 font-semibold" 
+                      : "bg-blue-100 text-blue-800 border-blue-200 font-semibold";
                     return (
                       <tr key={row.category} className="hover:bg-[#f9f8f5]">
                         <td className="px-4 py-3 text-sm font-medium text-[#28251d]">{row.category}</td>
                         <td className="px-4 py-3">
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-[#f3f0ec] text-[#7a7974]">{row.tipe}</span>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full border ${tipeStyle}`}>{row.tipe}</span>
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[#28251d]">{row.actual_pct}%</td>
                         <td className="px-4 py-3 text-sm text-[#7a7974]">&le;{row.ideal_pct}%</td>
@@ -88,7 +93,9 @@ export default function AllocationPage() {
                   })}
                   <tr className="bg-[#f9f8f5]">
                     <td className="px-4 py-3 text-sm font-semibold text-[#28251d]">Tabungan / Investasi</td>
-                    <td className="px-4 py-3"><span className="text-xs px-2 py-0.5 rounded-full bg-[#01696f]/10 text-[#01696f]">Savings</span></td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200 font-semibold">Savings</span>
+                    </td>
                     <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[#28251d]">{data?.savings_pct ?? 0}%</td>
                     <td className="px-4 py-3 text-sm text-[#7a7974]">&ge;{data?.savings_ideal_pct ?? 20}%</td>
                     <td colSpan={2} className="px-4 py-3 text-sm text-[#7a7974]">-</td>

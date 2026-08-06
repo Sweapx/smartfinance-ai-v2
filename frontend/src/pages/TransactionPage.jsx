@@ -41,13 +41,15 @@ function TransactionModal({ tx, onClose, onSave }) {
             <input type="number" required min="1" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
               placeholder="0" className="w-full px-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f]" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-[#28251d] mb-1.5">Kategori</label>
-            <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
-              className="w-full px-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f] bg-white">
-              {CATEGORIES.map((c) => (<option key={c}>{c}</option>))}
-            </select>
-          </div>
+          {form.type === "expense" && (
+            <div>
+              <label className="block text-sm font-medium text-[#28251d] mb-1.5">Kategori Pengeluaran</label>
+              <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
+                className="w-full px-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f] bg-white">
+                {CATEGORIES.map((c) => (<option key={c}>{c}</option>))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-[#28251d] mb-1.5">Tanggal</label>
             <input type="date" required value={form.tx_date} onChange={(e) => setForm((p) => ({ ...p, tx_date: e.target.value }))}
