@@ -4,7 +4,10 @@ import api from "../utils/api";
 import { formatRupiah, formatDate, CATEGORIES, MONTHS } from "../utils/format";
 
 function TransactionModal({ tx, onClose, onSave }) {
-  const [form, setForm] = useState(tx || { amount: "", category: "Food & Beverage", type: "expense", tx_date: new Date().toISOString().split("T")[0], description: "" });
+  const [form, setForm] = useState(() => {
+    if (!tx) return { amount: "", category: "Food & Beverage", type: "expense", tx_date: new Date().toISOString().split("T")[0], description: "" };
+    return tx.type === "income" ? { ...tx, category: "Income" } : tx;
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -12,11 +15,20 @@ function TransactionModal({ tx, onClose, onSave }) {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      if (tx?.id) await api.put(`/transactions/${tx.id}`, form);
-      else await api.post("/transactions", form);
+      const payload = { ...form, category: form.type === "income" ? "Income" : form.category };
+      if (tx?.id) await api.put(`/transactions/${tx.id}`, payload);
+      else await api.post("/transactions", payload);
       onSave();
     } catch (err) { setError(err.response?.data?.detail || "Gagal menyimpan"); }
     finally { setLoading(false); }
+  };
+
+  const handleTypeChange = (t) => {
+    setForm((p) => ({
+      ...p,
+      type: t,
+      category: t === "income" ? "Income" : (p.category === "Income" ? "Food & Beverage" : p.category),
+    }));
   };
 
   return (
@@ -30,7 +42,7 @@ function TransactionModal({ tx, onClose, onSave }) {
           {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
           <div className="flex rounded-lg border border-[#d4d1ca] overflow-hidden">
             {["expense", "income"].map((t) => (
-              <button key={t} type="button" onClick={() => setForm((p) => ({ ...p, type: t }))}
+              <button key={t} type="button" onClick={() => handleTypeChange(t)}
                 className={`flex-1 py-2 text-sm font-medium transition-colors ${form.type === t ? (t === "expense" ? "bg-red-500 text-white" : "bg-[#01696f] text-white") : "text-[#7a7974] hover:bg-[#f3f0ec]"}`}>
                 {t === "expense" ? "Pengeluaran" : "Pemasukan"}
               </button>
@@ -41,13 +53,19 @@ function TransactionModal({ tx, onClose, onSave }) {
             <input type="number" required min="1" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))}
               placeholder="0" className="w-full px-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f]" />
           </div>
-          {form.type === "expense" && (
+          {form.type === "expense" ? (
             <div>
               <label className="block text-sm font-medium text-[#28251d] mb-1.5">Kategori Pengeluaran</label>
               <select value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}
                 className="w-full px-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f] bg-white">
                 {CATEGORIES.map((c) => (<option key={c}>{c}</option>))}
               </select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-[#28251d] mb-1.5">Kategori Pemasukan</label>
+              <input type="text" readOnly value="Income"
+                className="w-full px-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm bg-gray-100 text-gray-700 cursor-not-allowed font-medium" />
             </div>
           )}
           <div>
@@ -157,7 +175,7 @@ export default function TransactionPage() {
                 {filtered.map((tx) => (
                   <tr key={tx.id} className="hover:bg-[#f9f8f5] transition-colors">
                     <td className="px-4 py-3 text-sm text-[#7a7974] whitespace-nowrap">{formatDate(tx.tx_date)}</td>
-                    <td className="px-4 py-3"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#f3f0ec] text-[#28251d]">{tx.category}</span></td>
+                    <td className="px-4 py-3"><span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#f3f0ec] text-[#28251d]">{tx.type === "income" ? "Income" : tx.category}</span></td>
                     <td className="px-4 py-3 text-sm text-[#7a7974] max-w-xs truncate">{tx.description || "-"}</td>
                     <td className="px-4 py-3"><span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tx.type === "income" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>{tx.type === "income" ? "Masuk" : "Keluar"}</span></td>
                     <td className={`px-4 py-3 text-sm font-semibold tabular-nums ${tx.type === "income" ? "text-green-600" : "text-red-500"}`}>{tx.type === "income" ? "+" : "-"}{formatRupiah(tx.amount)}</td>

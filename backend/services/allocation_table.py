@@ -1,7 +1,6 @@
 """
 Tabel Alokasi Pengeluaran — Profil "Umum" (50/30/20)
-Diadaptasi dari framework 50/30/20 (Warren & Tyagi, 2005)
-dan POJK No. 76/POJK.07/2016 tentang Peningkatan Literasi Keuangan.
+Diadaptasi dari framework 50/30/20 (Warren & Tyagi, 2005).
 
 8 Kategori baku sesuai Bab 1 Ruang Lingkup Penelitian:
 Food & Beverage, Transport, Entertainment, Bills, Health, Shopping, Education, Other.
@@ -23,15 +22,16 @@ Sekarang "Other" dimasukkan ke kelompok Wants dengan porsi 10%, sehingga:
 """
 
 ALLOCATION_TABLE = {
-    "Food & Beverage": {"ideal": 15, "warning": 20, "critical": 25, "tipe": "Needs"},
-    "Transport":        {"ideal": 10, "warning": 15, "critical": 20, "tipe": "Needs"},
-    "Bills":            {"ideal": 15, "warning": 20, "critical": 25, "tipe": "Needs"},
-    "Health":           {"ideal": 10, "warning": 15, "critical": 20, "tipe": "Needs"},
-    "Shopping":         {"ideal": 10, "warning": 15, "critical": 20, "tipe": "Wants"},
-    "Entertainment":    {"ideal": 5,  "warning": 10, "critical": 15, "tipe": "Wants"},
-    "Education":        {"ideal": 5,  "warning": 10, "critical": 15, "tipe": "Wants"},
-    "Other":            {"ideal": 10, "warning": 15, "critical": 20, "tipe": "Wants"},
+    "Bills":            {"ideal": 35, "warning": 45, "critical": 100, "tipe": "Needs"},
+    "Food & Beverage": {"ideal": 15, "warning": 20, "critical": 100, "tipe": "Needs"},
+    "Health":           {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Needs"},
+    "Transport":        {"ideal": 10, "warning": 20, "critical": 100, "tipe": "Needs"},
+    "Shopping":         {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Wants"},
+    "Entertainment":    {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Wants"},
+    "Education":        {"ideal": 10, "warning": 5,  "critical": 0,   "tipe": "Wants"},
+    "Other":            {"ideal": 5,  "warning": 10, "critical": 100, "tipe": "Wants"},
 }
+
 
 # Alokasi tabungan/investasi minimal sesuai profil Umum 50/30/20
 SAVINGS_IDEAL_PCT = 20

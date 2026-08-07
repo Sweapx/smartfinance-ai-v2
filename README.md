@@ -3,7 +3,7 @@
 Dashboard Analitik Keuangan Pribadi dengan 3 layanan AI terintegrasi:
 
 1. **Forecasting Service (LSTM)** — memprediksi nominal pengeluaran bulan depan per kategori berdasarkan data historis time-series.
-2. **Recommendation Service (Rule-Based)** — menghitung Financial Health Score dan rekomendasi otomatis berdasarkan framework 50/30/20 (Warren & Tyagi, 2005) dan POJK No. 76/POJK.07/2016.
+2. **Recommendation Service (Rule-Based)** — menghitung Financial Health Score dan rekomendasi otomatis berdasarkan framework 50/30/20 (Warren & Tyagi, 2005).
 3. **LLM Chatbot Service** — menyampaikan hasil prediksi dan rekomendasi dalam bahasa natural via Groq API.
 
 ## Arsitektur
@@ -18,22 +18,22 @@ FastAPI Engine (Backend)
    |-- LLM Chatbot Service    -> Groq API
    |
    v
-MySQL (users, transactions)
+SQLite / MySQL (users, transactions)
 ```
 
 ## Tabel Alokasi 50/30/20 (Profil Umum)
 
 | Kategori | Tipe | Ideal | Warning | Kritis |
 |---|---|---|---|---|
-| Food & Beverage | Needs | ≤15% | 15-20% | >25% |
-| Transport | Needs | ≤10% | 10-15% | >20% |
-| Bills | Needs | ≤15% | 15-20% | >25% |
-| Health | Needs | ≤10% | 10-15% | >20% |
-| Shopping | Wants | ≤10% | 10-15% | >20% |
-| Entertainment | Wants | ≤5% | 5-10% | >15% |
-| Education | Wants | ≤5% | 5-10% | >15% |
-| Other | Fleksibel | ≤5% | 5-10% | >15% |
-| **Tabungan** | Savings | ≥20% | 10-20% | <10% |
+| Bills | Needs | 25–35% | 35–45% | >45% |
+| Food & Beverage | Needs | ≤15% | 15–20% | >20% |
+| Health | Needs | 5–10% | 10–15% | >15% |
+| Transport | Needs | 5–10% | 10–20% | >20% |
+| Shopping | Wants | ≤10% | 10–15% | >15% |
+| Entertainment | Wants | ≤10% | 10–15% | >15% |
+| Education | Wants | 5–10% | 0–5% | - |
+| Other | Wants | ≤5% | 5–10% | >10% |
+| **Tabungan** | Savings | ≥20% | 10–20% | <10% |
 
 ## Financial Health Score
 

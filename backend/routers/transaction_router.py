@@ -19,12 +19,13 @@ def list_transactions(
     current_user: models.User = Depends(get_current_user),
 ):
     q = db.query(models.Transaction).filter(models.Transaction.user_id == current_user.id)
-    if month:
-        q = q.filter(models.Transaction.tx_date.op("MONTH")() == month) if False else q
-    if year and month:
+    if month and year:
         from sqlalchemy import extract
         q = q.filter(extract("year", models.Transaction.tx_date) == year,
                      extract("month", models.Transaction.tx_date) == month)
+    elif month:
+        from sqlalchemy import extract
+        q = q.filter(extract("month", models.Transaction.tx_date) == month)
     elif year:
         from sqlalchemy import extract
         q = q.filter(extract("year", models.Transaction.tx_date) == year)
@@ -41,7 +42,10 @@ def create_transaction(
 ):
     if payload.type not in ("income", "expense"):
         raise HTTPException(status_code=400, detail="Tipe harus 'income' atau 'expense'")
-    tx = models.Transaction(user_id=current_user.id, **payload.model_dump())
+    data = payload.model_dump()
+    if data.get("type") == "income":
+        data["category"] = "Income"
+    tx = models.Transaction(user_id=current_user.id, **data)
     db.add(tx)
     db.commit()
     db.refresh(tx)
@@ -61,12 +65,18 @@ def update_transaction(
     if not tx:
         raise HTTPException(status_code=404, detail="Transaksi tidak ditemukan")
 
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    data = payload.model_dump(exclude_unset=True)
+    new_type = data.get("type", tx.type)
+    if new_type == "income":
+        data["category"] = "Income"
+
+    for field, value in data.items():
         setattr(tx, field, value)
 
     db.commit()
     db.refresh(tx)
     return tx
+
 
 
 @router.delete("/{tx_id}", status_code=204)

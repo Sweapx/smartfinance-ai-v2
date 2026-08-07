@@ -91,7 +91,7 @@ export default function BudgetPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-[#f9f8f5] rounded-lg p-4">
-            <p className="text-xs text-[#7a7974] mb-1">Pemasukan Bulanan</p>
+            <p className="text-xs text-[#7a7974] mb-1">Pemasukan Bulanan <span className="font-normal text-[11px] text-[#01696f]">(Aktual)</span></p>
             <p className="text-base md:text-lg font-semibold text-[#28251d]">{formatRupiah(budget?.monthly_income ?? 0)}</p>
           </div>
           <div className="bg-[#f9f8f5] rounded-lg p-4">

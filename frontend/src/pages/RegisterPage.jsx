@@ -79,7 +79,7 @@ export default function RegisterPage() {
                   placeholder="Contoh: 8000000"
                   className="w-full pl-10 pr-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f]" />
               </div>
-              <p className="text-xs text-[#7a7974] mt-1.5">Digunakan untuk menghitung alokasi 50/30/20 dan Financial Health Score.</p>
+              <p className="text-xs text-[#7a7974] mt-1.5">Otomatis diambil dari data aktual transaksi pemasukan Anda.</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#28251d] mb-1.5">
@@ -92,7 +92,7 @@ export default function RegisterPage() {
                   placeholder="Contoh: 6000000"
                   className="w-full pl-10 pr-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f]" />
               </div>
-              <p className="text-xs text-[#7a7974] mt-1.5">Batas maksimal pengeluaran bulanan Anda.</p>
+              <p className="text-xs text-[#7a7974] mt-1.5">Batas maksimal pengeluaran bulanan Anda (dapat diatur nanti di menu Anggaran).</p>
             </div>
             <button type="submit" disabled={loading}
               className="w-full py-2.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-sm font-medium disabled:opacity-60 transition-colors">

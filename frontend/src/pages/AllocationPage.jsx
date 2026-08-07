@@ -1,13 +1,36 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, Info, CheckCircle, AlertTriangle, AlertCircle } from "lucide-react";
+import { RefreshCw, Info } from "lucide-react";
 import api from "../utils/api";
-import { formatRupiah, STATUS_COLOR, STATUS_LABEL } from "../utils/format";
+import { STATUS_LABEL } from "../utils/format";
 
-const StatusIcon = ({ status }) => {
-  if (status === "danger") return <AlertTriangle size={14} />;
-  if (status === "warning") return <AlertCircle size={14} />;
-  if (status === "caution") return <AlertCircle size={14} />;
-  return <CheckCircle size={14} />;
+const StatusDot = ({ status }) => {
+  const colorMap = {
+    excellent: "bg-emerald-500",
+    safe: "bg-emerald-500",
+    caution: "bg-yellow-500",
+    warning: "bg-yellow-500",
+    danger: "bg-red-500",
+    critical: "bg-red-500",
+  };
+  const dotColor = colorMap[status] || "bg-emerald-500";
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#f9f8f5] text-[#28251d] border border-[#e5e3df]">
+      <span className={`w-2.5 h-2.5 rounded-full ${dotColor}`} />
+      {STATUS_LABEL[status] || "Aman"}
+    </span>
+  );
+};
+
+// Static reference rules according to PDF spec
+const CATEGORY_DISPLAY_RULES = {
+  Bills: { ideal: "25–35%", warning: "35–45%", critical: ">45%" },
+  "Food & Beverage": { ideal: "≤15%", warning: "15–20%", critical: ">20%" },
+  Health: { ideal: "5–10%", warning: "10–15%", critical: ">15%" },
+  Transport: { ideal: "5–10%", warning: "10–20%", critical: ">20%" },
+  Shopping: { ideal: "≤10%", warning: "10–15%", critical: ">15%" },
+  Entertainment: { ideal: "≤10%", warning: "10–15%", critical: ">15%" },
+  Education: { ideal: "5–10%", warning: "0–5%", critical: "-" },
+  Other: { ideal: "≤5%", warning: "5–10%", critical: ">10%" },
 };
 
 export default function AllocationPage() {
@@ -19,25 +42,46 @@ export default function AllocationPage() {
     try {
       const { data: d } = await api.get("/predict/health-score");
       setData(d);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { fetchHealth(); }, []);
+  useEffect(() => {
+    fetchHealth();
+  }, []);
+
+  const breakdown = data?.breakdown || [];
+  const needsItems = breakdown.filter((b) => b.tipe === "Needs");
+  const wantsItems = breakdown.filter((b) => b.tipe === "Wants");
+
+  const needsActual = needsItems.reduce((acc, curr) => acc + (curr.actual_pct || 0), 0);
+  const wantsActual = wantsItems.reduce((acc, curr) => acc + (curr.actual_pct || 0), 0);
+  const savingsActual = data?.savings_pct ?? 0;
+
+  const needsStatus = needsActual <= 50 ? "safe" : needsActual <= 60 ? "warning" : "danger";
+  const wantsStatus = wantsActual <= 30 ? "safe" : wantsActual <= 40 ? "warning" : "danger";
+  const savingsStatus = savingsActual >= 20 ? "excellent" : savingsActual >= 10 ? "warning" : "danger";
+
+  // Highest expense in Needs group for rule-based recommendation note
+  const highestNeedsCat = [...needsItems].sort((a, b) => (b.actual_pct || 0) - (a.actual_pct || 0))[0];
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-8">
+      {/* Header Card */}
       <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm">
         <div className="flex items-start justify-between mb-1">
           <div>
-            <h2 className="font-semibold text-[#28251d] text-base">Tabel Alokasi 50/30/20</h2>
+            <h2 className="font-semibold text-[#28251d] text-lg">Tabel Alokasi 50/30/20</h2>
             <p className="text-xs text-[#7a7974] mt-1 max-w-2xl">
-              Rekomendasi ini diadaptasi dari framework 50/30/20 (Warren & Tyagi, 2005) dan disesuaikan dengan konteks
-              literasi keuangan pribadi sebagaimana diatur dalam POJK No. 76/POJK.07/2016 tentang Peningkatan Literasi
-              dan Inklusi Keuangan di Sektor Jasa Keuangan.
+              Rekomendasi ini diadaptasi dari framework 50/30/20 (Warren &amp; Tyagi, 2005).
             </p>
           </div>
-          <button onClick={fetchHealth} className="p-2 rounded-lg hover:bg-[#f3f0ec] text-[#7a7974] flex-shrink-0"><RefreshCw size={15} className={loading ? "animate-spin" : ""} /></button>
+          <button onClick={fetchHealth} className="p-2 rounded-lg hover:bg-[#f3f0ec] text-[#7a7974] flex-shrink-0">
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
       </div>
 
@@ -55,82 +99,227 @@ export default function AllocationPage() {
         <div className="bg-white rounded-xl border border-[#dcd9d5] h-96 skeleton" />
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-[#dcd9d5] overflow-hidden shadow-sm">
+          {/* TABEL 1: Ringkasan Framework 50/30/20 */}
+          <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-4">
+            <div>
+              <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
+                <span>📊</span> Tabel 1. Ringkasan Framework 50/30/20
+              </h3>
+              <p className="text-xs text-[#7a7974] mt-1 italic">Ini yang pertama kali dilihat user.</p>
+            </div>
+
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-[#f3f0ec] bg-[#f9f8f5]">
-                    {["Kategori", "Tipe", "Aktual", "Ideal", "Waspada", "Kritis", "Status"].map((h) => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-medium text-[#7a7974] uppercase tracking-wide">{h}</th>
-                    ))}
+                  <tr className="border-b border-[#e5e3df] bg-[#f9f8f5]">
+                    <th className="text-left px-4 py-3 font-semibold text-[#28251d]">Kelompok</th>
+                    <th className="text-left px-4 py-3 font-semibold text-[#28251d]">Aktual</th>
+                    <th className="text-left px-4 py-3 font-semibold text-[#28251d]">Ideal</th>
+                    <th className="text-left px-4 py-3 font-semibold text-[#28251d]">Waspada</th>
+                    <th className="text-left px-4 py-3 font-semibold text-[#28251d]">Kritis</th>
+                    <th className="text-left px-4 py-3 font-semibold text-[#28251d]">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f3f0ec]">
-                  {data?.breakdown?.map((row) => {
-                    const c = STATUS_COLOR[row.status];
-                    const tipeStyle = row.tipe === "Needs" 
-                      ? "bg-green-100 text-green-800 border-green-200 font-semibold" 
-                      : row.tipe === "Wants" 
-                      ? "bg-orange-100 text-orange-800 border-orange-200 font-semibold" 
-                      : "bg-blue-100 text-blue-800 border-blue-200 font-semibold";
-                    return (
-                      <tr key={row.category} className="hover:bg-[#f9f8f5]">
-                        <td className="px-4 py-3 text-sm font-medium text-[#28251d]">{row.category}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs px-2.5 py-0.5 rounded-full border ${tipeStyle}`}>{row.tipe}</span>
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[#28251d]">{row.actual_pct}%</td>
-                        <td className="px-4 py-3 text-sm text-[#7a7974]">&le;{row.ideal_pct}%</td>
-                        <td className="px-4 py-3 text-sm text-[#7a7974]">{row.ideal_pct}-{row.warning_pct}%</td>
-                        <td className="px-4 py-3 text-sm text-[#7a7974]">&gt;{row.critical_pct}%</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border font-medium ${c.bg} ${c.text} ${c.border}`}>
-                            <StatusIcon status={row.status} />{STATUS_LABEL[row.status]}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  <tr className="bg-[#f9f8f5]">
-                    <td className="px-4 py-3 text-sm font-semibold text-[#28251d]">Tabungan / Investasi</td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs px-2.5 py-0.5 rounded-full border bg-blue-100 text-blue-800 border-blue-200 font-semibold">Savings</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold tabular-nums text-[#28251d]">{data?.savings_pct ?? 0}%</td>
-                    <td className="px-4 py-3 text-sm text-[#7a7974]">&ge;{data?.savings_ideal_pct ?? 20}%</td>
-                    <td colSpan={2} className="px-4 py-3 text-sm text-[#7a7974]">-</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border font-medium ${STATUS_COLOR[data?.savings_status || "safe"].bg} ${STATUS_COLOR[data?.savings_status || "safe"].text} ${STATUS_COLOR[data?.savings_status || "safe"].border}`}>
-                        <StatusIcon status={data?.savings_status || "safe"} />{STATUS_LABEL[data?.savings_status || "safe"]}
-                      </span>
-                    </td>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-[#28251d]">Needs</td>
+                    <td className="px-4 py-3 font-semibold tabular-nums text-[#28251d]">{needsActual.toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-[#555]">&le;50%</td>
+                    <td className="px-4 py-3 text-[#555]">50–60%</td>
+                    <td className="px-4 py-3 text-[#555]">&gt;60%</td>
+                    <td className="px-4 py-3"><StatusDot status={needsStatus} /></td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-[#28251d]">Wants</td>
+                    <td className="px-4 py-3 font-semibold tabular-nums text-[#28251d]">{wantsActual.toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-[#555]">&le;30%</td>
+                    <td className="px-4 py-3 text-[#555]">30–40%</td>
+                    <td className="px-4 py-3 text-[#555]">&gt;40%</td>
+                    <td className="px-4 py-3"><StatusDot status={wantsStatus} /></td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 font-medium text-[#28251d]">Savings</td>
+                    <td className="px-4 py-3 font-semibold tabular-nums text-[#28251d]">{savingsActual.toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-[#555]">&ge;20%</td>
+                    <td className="px-4 py-3 text-[#555]">10–20%</td>
+                    <td className="px-4 py-3 text-[#555]">&lt;10%</td>
+                    <td className="px-4 py-3"><StatusDot status={savingsStatus} /></td>
                   </tr>
                 </tbody>
               </table>
             </div>
+
+            <p className="text-xs text-[#7a7974] pt-2">
+              Framework 50/30/20 mengevaluasi proporsi total pengeluaran berdasarkan tiga kelompok utama, yaitu Needs, Wants, dan Savings.
+            </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm">
-            <h3 className="font-semibold text-[#28251d] text-sm mb-4">Rekomendasi Otomatis (Rule-Based)</h3>
-            {data?.top_recommendations?.length > 0 ? (
-              <div className="space-y-3">
-                {data.top_recommendations.map((rec, i) => {
-                  const c = STATUS_COLOR[rec.status];
-                  return (
-                    <div key={i} className={`p-4 rounded-lg border ${c.border} ${c.bg}`}>
-                      <div className="flex items-start gap-2.5">
-                        <StatusIcon status={rec.status} />
-                        <p className={`text-sm ${c.text}`}>{rec.recommendation}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+          {/* TABEL 2: Detail Alokasi Kategori (Rule-Based) */}
+          <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-6">
+            <div>
+              <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
+                <span>📋</span> Tabel 2. Detail Alokasi Kategori (Rule-Based)
+              </h3>
+              <p className="text-xs text-[#7a7974] mt-1 italic">Kemudian baru tampil rincian setiap kategori.</p>
+            </div>
+
+            {/* Group 1: NEEDS */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-sm text-[#01696f] flex items-center gap-2">
+                <span className="w-3 h-3 bg-blue-500 inline-block rounded-sm"></span> NEEDS
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e5e3df] bg-[#f9f8f5]">
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Kategori</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Aktual</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Ideal</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Waspada</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Kritis</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f3f0ec]">
+                    {needsItems.map((item) => {
+                      const rules = CATEGORY_DISPLAY_RULES[item.category] || { ideal: `≤${item.ideal_pct}%`, warning: `${item.ideal_pct}-${item.warning_pct}%`, critical: `>${item.critical_pct}%` };
+                      return (
+                        <tr key={item.category} className="hover:bg-[#f9f8f5]">
+                          <td className="px-4 py-3 font-medium text-[#28251d]">{item.category}</td>
+                          <td className="px-4 py-3 font-semibold tabular-nums text-[#28251d]">{item.actual_pct}%</td>
+                          <td className="px-4 py-3 text-[#555]">{rules.ideal}</td>
+                          <td className="px-4 py-3 text-[#555]">{rules.warning}</td>
+                          <td className="px-4 py-3 text-[#555]">{rules.critical}</td>
+                          <td className="px-4 py-3"><StatusDot status={item.status} /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <div className="flex items-center gap-2.5 text-green-700 bg-green-50 border border-green-200 rounded-lg p-4">
-                <CheckCircle size={16} /><p className="text-sm">Semua kategori pengeluaran Anda masih dalam batas ideal. Pertahankan!</p>
+            </div>
+
+            {/* Group 2: WANTS */}
+            <div className="space-y-3 pt-2">
+              <h4 className="font-bold text-sm text-[#da7101] flex items-center gap-2">
+                <span className="w-3 h-3 bg-orange-500 inline-block rounded-sm"></span> WANTS
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e5e3df] bg-[#f9f8f5]">
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Kategori</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Aktual</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Ideal</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Waspada</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Kritis</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#f3f0ec]">
+                    {wantsItems.map((item) => {
+                      const rules = CATEGORY_DISPLAY_RULES[item.category] || { ideal: `≤${item.ideal_pct}%`, warning: `${item.ideal_pct}-${item.warning_pct}%`, critical: `>${item.critical_pct}%` };
+                      return (
+                        <tr key={item.category} className="hover:bg-[#f9f8f5]">
+                          <td className="px-4 py-3 font-medium text-[#28251d]">{item.category}</td>
+                          <td className="px-4 py-3 font-semibold tabular-nums text-[#28251d]">{item.actual_pct}%</td>
+                          <td className="px-4 py-3 text-[#555]">{rules.ideal}</td>
+                          <td className="px-4 py-3 text-[#555]">{rules.warning}</td>
+                          <td className="px-4 py-3 text-[#555]">{rules.critical}</td>
+                          <td className="px-4 py-3"><StatusDot status={item.status} /></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
+
+            {/* Group 3: SAVINGS */}
+            <div className="space-y-3 pt-2">
+              <h4 className="font-bold text-sm text-[#059669] flex items-center gap-2">
+                <span className="w-3 h-3 bg-emerald-500 inline-block rounded-sm"></span> SAVINGS
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e5e3df] bg-[#f9f8f5]">
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Kategori</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Aktual</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Ideal</th>
+                      <th className="text-left px-4 py-2.5 font-semibold text-[#28251d]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="hover:bg-[#f9f8f5]">
+                      <td className="px-4 py-3 font-medium text-[#28251d]">Tabungan / Investasi</td>
+                      <td className="px-4 py-3 font-semibold tabular-nums text-[#28251d]">{savingsActual}%</td>
+                      <td className="px-4 py-3 text-[#555]">&ge;20%</td>
+                      <td className="px-4 py-3"><StatusDot status={savingsStatus} /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Rule-Based Recommendation */}
+          <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-4">
+            <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
+              <span>🤖</span> Rule-Based Recommendation
+            </h3>
+            <p className="text-xs text-[#7a7974] italic">Misalnya:</p>
+
+            <div className="space-y-3 text-sm text-[#28251d]">
+              <p className="font-semibold text-base">
+                Financial Health : <span className="text-[#01696f]">{data?.score ?? 0} ({data?.label ?? "Sehat"})</span>
+              </p>
+
+              <div className="space-y-2 pt-1">
+                <p className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span>
+                    Total Needs {needsActual <= 50 ? "masih berada di bawah batas ideal 50%" : `mencapai ${needsActual.toFixed(1)}%, melebihi batas ideal 50%`}.
+                  </span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span>
+                    Total Wants {wantsActual <= 30 ? "masih berada di bawah batas ideal 30%" : `mencapai ${wantsActual.toFixed(1)}%, melebihi batas ideal 30%`}.
+                  </span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span>
+                    Tabungan {savingsActual >= 20 ? `telah mencapai ${savingsActual}%, melebihi target minimum 20%` : `baru mencapai ${savingsActual}%, kurang dari target minimum 20%`}.
+                  </span>
+                </p>
+
+                {highestNeedsCat && (
+                  <p className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
+                    <span className="text-amber-600 font-bold">⚠️</span>
+                    <span>
+                      Namun, kategori {highestNeedsCat.category} merupakan pengeluaran terbesar dalam kelompok Needs ({highestNeedsCat.actual_pct}%) sehingga perlu dipantau agar tidak meningkat pada bulan berikutnya.
+                    </span>
+                  </p>
+                )}
+
+                {(() => {
+                  const edu = breakdown.find((b) => b.category === "Education");
+                  if (edu && (edu.actual_pct < 5)) {
+                    return (
+                      <p className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
+                        <span className="text-amber-600 font-bold">⚠️</span>
+                        <span>
+                          Pengeluaran Education Anda {edu.actual_pct}%, kurang dari idealnya 5%. Alihkan sebagian pengeluaran ke edukasi ini.
+                        </span>
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            </div>
           </div>
         </>
       )}
