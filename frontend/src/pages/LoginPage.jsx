@@ -35,7 +35,7 @@ export default function LoginPage() {
 
         <div className="bg-white rounded-2xl border border-[#dcd9d5] p-7 shadow-sm">
           <h1 className="text-lg font-semibold text-[#28251d] mb-1">Masuk ke akun Anda</h1>
-          <p className="text-sm text-[#7a7974] mb-6">Kelola keuangan Anda dengan bantuan AI</p>
+          <p className="text-sm text-[#7a7974] mb-6">Kelola dan rencanakan keuangan Anda secara optimal</p>
 
           {error && <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
 

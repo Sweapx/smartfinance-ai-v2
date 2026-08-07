@@ -34,16 +34,16 @@ export default function PredictionPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp size={18} />
-              <span className="text-xs md:text-sm font-medium opacity-90">Deep Learning Forecasting Service</span>
+              <span className="text-xs md:text-sm font-medium opacity-90">Layanan Proyeksi Pengeluaran</span>
             </div>
             <h2 className="text-xl md:text-2xl font-bold">Prediksi Pengeluaran Bulanan</h2>
             <p className="text-sm opacity-85 mt-1">
-              Model memprediksi total pengeluaran bulan <strong className="underline">{data?.prediction_month || "..."}</strong> sebesar{" "}
+              Estimasi total pengeluaran bulan <strong className="underline">{data?.prediction_month || "..."}</strong> sebesar{" "}
               <strong className="text-yellow-300 font-semibold">{formatRupiah(data?.total_predicted || 0)}</strong>.
             </p>
             {data?.cold_start && (
               <p className="text-xs opacity-75 mt-2 bg-white/10 px-3 py-1 rounded-md inline-block">
-                * Cold Start Mode (Data historis: {data?.days_history} hari — fallback ke Moving Average)
+                Estimasi awal berdasarkan data transaksi {data?.days_history} hari.
               </p>
             )}
           </div>
@@ -58,30 +58,30 @@ export default function PredictionPage() {
         <div className="bg-white rounded-xl border border-[#dcd9d5] p-3.5 shadow-sm">
           <div className="flex items-center gap-2 text-[#7a7974] text-xs mb-1">
             <Cpu size={14} className="text-[#01696f]" />
-            <span>Model</span>
+            <span>Metode Analisis</span>
           </div>
-          <p className="font-bold text-[#28251d] text-base">LSTM</p>
+          <p className="font-bold text-[#28251d] text-base">Time-Series (LSTM)</p>
         </div>
         <div className="bg-white rounded-xl border border-[#dcd9d5] p-3.5 shadow-sm">
           <div className="flex items-center gap-2 text-[#7a7974] text-xs mb-1">
             <Clock size={14} className="text-[#01696f]" />
-            <span>Time Step</span>
+            <span>Periode Jendela</span>
           </div>
-          <p className="font-bold text-[#28251d] text-base">7</p>
+          <p className="font-bold text-[#28251d] text-base">7 Hari</p>
         </div>
         <div className="bg-white rounded-xl border border-[#dcd9d5] p-3.5 shadow-sm">
           <div className="flex items-center gap-2 text-[#7a7974] text-xs mb-1">
             <Calendar size={14} className="text-[#01696f]" />
-            <span>Input</span>
+            <span>Data Masukan</span>
           </div>
-          <p className="font-bold text-[#28251d] text-base">7 hari histori</p>
+          <p className="font-bold text-[#28251d] text-base">Riwayat Transaksi</p>
         </div>
         <div className="bg-white rounded-xl border border-[#dcd9d5] p-3.5 shadow-sm">
           <div className="flex items-center gap-2 text-[#7a7974] text-xs mb-1">
             <BarChart3 size={14} className="text-[#01696f]" />
-            <span>Output</span>
+            <span>Cakupan Proyeksi</span>
           </div>
-          <p className="font-bold text-[#28251d] text-base">Prediksi 30 hari</p>
+          <p className="font-bold text-[#28251d] text-base">30 Hari ke Depan</p>
         </div>
       </div>
 

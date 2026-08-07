@@ -62,8 +62,8 @@ export default function ChatPage() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-[#01696f] rounded-xl flex items-center justify-center"><Bot size={20} color="white" /></div>
           <div>
-            <h3 className="font-semibold text-[#28251d] text-sm">SmartFinance Advisor</h3>
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /><span className="text-xs text-[#7a7974]">Online - LLM Chatbot Service (Groq)</span></div>
+            <h3 className="font-semibold text-[#28251d] text-sm">Konsultan Finansial</h3>
+            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" /><span className="text-xs text-[#7a7974]">Online - Layanan Asisten Finansial</span></div>
           </div>
         </div>
         <button onClick={handleReset} className="p-2 rounded-lg hover:bg-[#f3f0ec] text-[#7a7974]" title="Reset chat"><RefreshCw size={16} /></button>

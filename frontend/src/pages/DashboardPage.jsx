@@ -122,7 +122,7 @@ function DashboardChatbot() {
         ...prev,
         {
           role: "assistant",
-          content: "Maaf, terjadi kendala saat menghubungkan ke AI Advisor.",
+          content: "Maaf, terjadi kendala saat memproses pesan.",
         },
       ]);
     } finally {
@@ -138,12 +138,12 @@ function DashboardChatbot() {
             <Bot size={18} color="white" />
           </div>
           <div>
-            <h3 className="font-semibold text-[#28251d] text-sm">Chatbot Advisor</h3>
-            <p className="text-[11px] text-[#7a7974]">Asisten Keuangan Berbasis LLM</p>
+            <h3 className="font-semibold text-[#28251d] text-sm">Konsultan Finansial</h3>
+            <p className="text-[11px] text-[#7a7974]">Asisten Keuangan Interaktif</p>
           </div>
         </div>
         <span className="flex items-center gap-1 text-[11px] text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> AI Active
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Aktif
         </span>
       </div>
 
@@ -170,7 +170,7 @@ function DashboardChatbot() {
         ))}
         {loading && (
           <div className="flex gap-2 items-center text-xs text-[#7a7974]">
-            <Bot size={14} className="animate-spin text-[#01696f]" /> AI sedang mengetik...
+            <Bot size={14} className="animate-spin text-[#01696f]" /> Sedang mengetik...
           </div>
         )}
         <div ref={chatEndRef} />
@@ -287,7 +287,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* AI Prediksi & Rekomendasi Interactive Cards */}
+      {/* Proyeksi & Rekomendasi Interactive Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Interactive Prediction Card -> Click navigates to /prediction */}
         <div
@@ -297,7 +297,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider bg-white/15 px-2.5 py-0.5 rounded-full text-white">
-                AI Forecasting Insight
+                Proyeksi Pengeluaran
               </span>
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform opacity-80" />
             </div>
@@ -308,7 +308,7 @@ export default function DashboardPage() {
               {formatRupiah(predictionData?.total_predicted || 0)}
             </p>
             <p className="text-xs opacity-85 mt-1">
-              Model LSTM memprediksi estimasi total pengeluaran sebulan ke depan berdasarkan 7 hari histori sekuensial.
+              Estimasi total pengeluaran sebulan ke depan berdasarkan analisis data historis transaksi.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs font-medium">
@@ -325,7 +325,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider bg-[#01696f]/10 text-[#01696f] px-2.5 py-0.5 rounded-full">
-                50/30/20 Rule Recommendation
+                Analisis 50/30/20
               </span>
               <ArrowRight size={18} className="text-[#01696f] group-hover:translate-x-1 transition-transform" />
             </div>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-[#f3f0ec] flex items-center justify-between text-xs font-medium text-[#01696f]">
-            <span>Lihat Breakdown & Rekomendasi Otomatis</span>
+            <span>Lihat Rincian & Rekomendasi</span>
             <span className="underline group-hover:text-[#0c4e54]">Buka Detail Rekomendasi &rarr;</span>
           </div>
         </div>

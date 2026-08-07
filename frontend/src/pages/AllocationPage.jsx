@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { RefreshCw, Info } from "lucide-react";
+import { RefreshCw, Info, CheckCircle2, XCircle, AlertCircle, AlertTriangle } from "lucide-react";
 import api from "../utils/api";
 import { STATUS_LABEL } from "../utils/format";
 
@@ -23,15 +23,15 @@ const StatusDot = ({ status }) => {
 
 // Aturan tampilan per kategori untuk kolom Ideal / Waspada / Kritis
 const CATEGORY_DISPLAY_RULES = {
-  Bills:              { ideal: "25–35%",  warning: "35–45%",  critical: ">45%",  inverse: false },
-  "Food & Beverage": { ideal: "≤15%",    warning: "15–20%",  critical: ">20%",  inverse: false },
-  Health:             { ideal: "≤10%",    warning: "10–15%",  critical: ">15%",  inverse: false },
-  Transport:          { ideal: "5–10%",   warning: "10–20%",  critical: ">20%",  inverse: false },
-  Shopping:           { ideal: "≤10%",    warning: "10–15%",  critical: ">15%",  inverse: false },
-  Entertainment:      { ideal: "≤10%",    warning: "10–15%",  critical: ">15%",  inverse: false },
+  Bills: { ideal: "25–35%", warning: "35–45%", critical: ">45%", inverse: false },
+  "Food & Beverage": { ideal: "≤15%", warning: "15–20%", critical: ">20%", inverse: false },
+  Health: { ideal: "≤10%", warning: "10–15%", critical: ">15%", inverse: false },
+  Transport: { ideal: "5–10%", warning: "10–20%", critical: ">20%", inverse: false },
+  Shopping: { ideal: "≤10%", warning: "10–15%", critical: ">15%", inverse: false },
+  Entertainment: { ideal: "≤10%", warning: "10–15%", critical: ">15%", inverse: false },
   // Education bersifat terbalik: semakin kecil pengeluaran = semakin buruk
-  Education:          { ideal: "≥5%",     warning: "0–5%",    critical: "0%",    inverse: true  },
-  Other:              { ideal: "≤5%",     warning: "5–10%",   critical: ">10%",  inverse: false },
+  Education: { ideal: "≥5%", warning: "0–5%", critical: "0%", inverse: true },
+  Other: { ideal: "≤5%", warning: "5–10%", critical: ">10%", inverse: false },
 };
 
 export default function AllocationPage() {
@@ -102,9 +102,9 @@ export default function AllocationPage() {
         <>
           {/* TABEL 1: Ringkasan Framework 50/30/20 */}
           <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-4">
-          <div>
-              <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
-                <span>📊</span> Tabel 1. Ringkasan Framework 50/30/20
+            <div>
+              <h3 className="font-bold text-[#28251d] text-base">
+                Ringkasan Framework 50/30/20
               </h3>
             </div>
 
@@ -157,8 +157,8 @@ export default function AllocationPage() {
           {/* TABEL 2: Detail Alokasi Kategori (Rule-Based) */}
           <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-6">
             <div>
-              <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
-                <span>📋</span> Tabel 2. Detail Alokasi Kategori (Rule-Based)
+              <h3 className="font-bold text-[#28251d] text-base">
+                Detail Alokasi Kategori
               </h3>
             </div>
 
@@ -264,60 +264,66 @@ export default function AllocationPage() {
 
           {/* Section 3: Rule-Based Recommendation */}
           <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-4">
-            <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
-              <span>🤖</span> Rule-Based Recommendation
+            <h3 className="font-bold text-[#28251d] text-base">
+              Rekomendasi Alokasi Anggaran
             </h3>
 
             <div className="space-y-3 text-sm text-[#28251d]">
               <p className="font-semibold text-base">
-                Financial Health : <span className="text-[#01696f]">{data?.score ?? 0} ({data?.label ?? "Sehat"})</span>
+                Kesehatan Finansial : <span className="text-[#01696f]">{data?.score ?? 0} ({data?.label ?? "Sehat"})</span>
               </p>
 
               <div className="space-y-2 pt-1">
                 <p className="flex items-center gap-2">
-                  <span className={needsActual <= 50 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
-                    {needsActual <= 50 ? "✓" : "✗"}
-                  </span>
+                  {needsActual <= 50 ? (
+                    <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <XCircle size={16} className="text-red-500 flex-shrink-0" />
+                  )}
                   <span>
                     Total Needs {needsActual <= 50 ? "masih berada di bawah batas ideal 50%" : `mencapai ${needsActual.toFixed(1)}%, melebihi batas ideal 50%`}.
                   </span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className={wantsActual <= 30 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
-                    {wantsActual <= 30 ? "✓" : "✗"}
-                  </span>
+                  {wantsActual <= 30 ? (
+                    <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <XCircle size={16} className="text-red-500 flex-shrink-0" />
+                  )}
                   <span>
                     Total Wants {wantsActual <= 30 ? "masih berada di bawah batas ideal 30%" : `mencapai ${wantsActual.toFixed(1)}%, melebihi batas ideal 30%`}.
                   </span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className={savingsActual >= 20 ? "text-emerald-600 font-bold" : "text-amber-500 font-bold"}>
-                    {savingsActual >= 20 ? "✓" : "⚠"}
-                  </span>
+                  {savingsActual >= 20 ? (
+                    <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <AlertTriangle size={16} className="text-amber-500 flex-shrink-0" />
+                  )}
                   <span>
                     Tabungan {savingsActual >= 20 ? `telah mencapai ${savingsActual}%, melebihi target minimum 20%` : `baru mencapai ${savingsActual}%, kurang dari target minimum 20%`}.
                   </span>
                 </p>
 
                 {highestNeedsCat && (
-                  <p className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
-                    <span className="text-amber-600 font-bold flex-shrink-0">⚠️</span>
+                  <div className="flex items-start gap-2.5 text-amber-800 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
+                    <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
                     <span>
                       Kategori {highestNeedsCat.category} merupakan pengeluaran terbesar dalam kelompok Needs ({highestNeedsCat.actual_pct}%) sehingga perlu dipantau agar tidak meningkat pada bulan berikutnya.
                     </span>
-                  </p>
+                  </div>
                 )}
 
                 {(() => {
                   const edu = breakdown.find((b) => b.category === "Education");
                   if (edu && edu.actual_pct < 5) {
                     return (
-                      <p className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
-                        <span className="text-amber-600 font-bold flex-shrink-0">⚠️</span>
+                      <div className="flex items-start gap-2.5 text-amber-800 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
+                        <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
                         <span>
                           Pengeluaran Education Anda {edu.actual_pct}%, masih di bawah batas ideal minimal 5%. Tingkatkan alokasi untuk investasi pendidikan.
                         </span>
-                      </p>
+                      </div>
                     );
                   }
                   return null;
