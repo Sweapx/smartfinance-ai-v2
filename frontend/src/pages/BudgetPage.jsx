@@ -67,6 +67,7 @@ export default function BudgetPage() {
   const budgetPct = budget?.budget_percentage ?? 0;
   const isOverBudget = budgetPct > 100;
   const isNearLimit = budgetPct > 80 && budgetPct <= 100;
+  const hasBudget = (budget?.monthly_budget ?? 0) > 0;
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -162,9 +163,9 @@ export default function BudgetPage() {
               onClick={() => setEditing(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-sm font-medium"
             >
-              <Wallet size={16} /> Edit Budget
+              <Wallet size={16} /> {hasBudget ? "Edit Budget" : "Atur Budget"}
             </button>
-            {(budget?.monthly_budget ?? 0) > 0 && (
+            {hasBudget && (
               <button
                 onClick={handleReset}
                 className="flex items-center gap-2 px-4 py-2.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium"
@@ -176,37 +177,49 @@ export default function BudgetPage() {
         )}
       </div>
 
-      <div className={`rounded-xl p-4 flex items-start gap-3 ${
-        isOverBudget ? "bg-red-50 border border-red-200" : isNearLimit ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"
-      }`}>
-        {isOverBudget ? (
-          <AlertTriangle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
-        ) : isNearLimit ? (
-          <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
-        ) : (
-          <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
-        )}
-        <div>
-          <p className={`font-medium text-sm ${
-            isOverBudget ? "text-red-700" : isNearLimit ? "text-yellow-700" : "text-green-700"
-          }`}>
-            {isOverBudget
-              ? "Budget Terlampaui!"
-              : isNearLimit
-              ? "Budget Hampir Habis"
-              : "Budget Aman"}
-          </p>
-          <p className={`text-xs mt-1 ${
-            isOverBudget ? "text-red-600" : isNearLimit ? "text-yellow-600" : "text-green-600"
-          }`}>
-            {isOverBudget
-              ? `Anda telah melebihi budget sebesar ${formatRupiah(Math.abs(budget?.budget_remaining ?? 0))}. Pertimbangkan untuk mengurangi pengeluaran bulan ini.`
-              : isNearLimit
-              ? `Sisa budget Anda ${formatRupiah(budget?.budget_remaining ?? 0)}. Pertimbangkan untuk berhati-hati dengan pengeluaran.`
-              : `Pengeluaran Anda masih dalam batas budget. Pertahankan pengelolaan keuangan yang baik!`}
-          </p>
+      {!hasBudget ? (
+        <div className="rounded-xl p-4 flex items-start gap-3 bg-blue-50 border border-blue-200">
+          <CheckCircle size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-sm text-blue-700">Budget Belum Diatur</p>
+            <p className="text-xs mt-1 text-blue-600">
+              Klik tombol <strong>"Atur Budget"</strong> di atas untuk menetapkan batas pengeluaran bulanan Anda. Pemasukan otomatis dihitung dari transaksi income bulan ini.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className={`rounded-xl p-4 flex items-start gap-3 ${
+          isOverBudget ? "bg-red-50 border border-red-200" : isNearLimit ? "bg-yellow-50 border border-yellow-200" : "bg-green-50 border border-green-200"
+        }`}>
+          {isOverBudget ? (
+            <AlertTriangle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+          ) : isNearLimit ? (
+            <AlertTriangle size={20} className="text-yellow-600 flex-shrink-0 mt-0.5" />
+          ) : (
+            <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+          )}
+          <div>
+            <p className={`font-medium text-sm ${
+              isOverBudget ? "text-red-700" : isNearLimit ? "text-yellow-700" : "text-green-700"
+            }`}>
+              {isOverBudget
+                ? "Budget Terlampaui!"
+                : isNearLimit
+                ? "Budget Hampir Habis"
+                : "Budget Aman"}
+            </p>
+            <p className={`text-xs mt-1 ${
+              isOverBudget ? "text-red-600" : isNearLimit ? "text-yellow-600" : "text-green-600"
+            }`}>
+              {isOverBudget
+                ? `Anda telah melebihi budget sebesar ${formatRupiah(Math.abs(budget?.budget_remaining ?? 0))}. Pertimbangkan untuk mengurangi pengeluaran bulan ini.`
+                : isNearLimit
+                ? `Sisa budget Anda ${formatRupiah(budget?.budget_remaining ?? 0)}. Pertimbangkan untuk berhati-hati dengan pengeluaran.`
+                : `Pengeluaran Anda masih dalam batas budget. Pertahankan pengelolaan keuangan yang baik!`}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

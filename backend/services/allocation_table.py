@@ -22,14 +22,17 @@ Sekarang "Other" dimasukkan ke kelompok Wants dengan porsi 10%, sehingga:
 """
 
 ALLOCATION_TABLE = {
-    "Bills":            {"ideal": 35, "warning": 45, "critical": 100, "tipe": "Needs"},
-    "Food & Beverage": {"ideal": 15, "warning": 20, "critical": 100, "tipe": "Needs"},
-    "Health":           {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Needs"},
-    "Transport":        {"ideal": 10, "warning": 20, "critical": 100, "tipe": "Needs"},
-    "Shopping":         {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Wants"},
-    "Entertainment":    {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Wants"},
-    "Education":        {"ideal": 10, "warning": 5,  "critical": 0,   "tipe": "Wants"},
-    "Other":            {"ideal": 5,  "warning": 10, "critical": 100, "tipe": "Wants"},
+    # Kategori standar: semakin besar pengeluaran = semakin buruk
+    "Bills":            {"ideal": 35, "warning": 45, "critical": 100, "tipe": "Needs", "inverse": False},
+    "Food & Beverage": {"ideal": 15, "warning": 20, "critical": 100, "tipe": "Needs", "inverse": False},
+    "Health":           {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Needs", "inverse": False},
+    "Transport":        {"ideal": 10, "warning": 20, "critical": 100, "tipe": "Needs", "inverse": False},
+    "Shopping":         {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Wants", "inverse": False},
+    "Entertainment":    {"ideal": 10, "warning": 15, "critical": 100, "tipe": "Wants", "inverse": False},
+    # Education bersifat terbalik: semakin kecil pengeluaran = semakin buruk
+    # ideal: 5-10%, waspada: < 5% (belum memenuhi batas ideal)
+    "Education":        {"ideal": 5,  "warning": 5,  "critical": 0,   "tipe": "Wants", "inverse": True},
+    "Other":            {"ideal": 5,  "warning": 10, "critical": 100, "tipe": "Wants", "inverse": False},
 }
 
 

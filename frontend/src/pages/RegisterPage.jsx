@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", monthly_income: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", monthly_budget: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,7 +14,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      await register(form.name, form.email, form.password, Number(form.monthly_income) || 0, Number(form.monthly_budget) || 0);
+      await register(form.name, form.email, form.password, 0, Number(form.monthly_budget) || 0);
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.detail || "Registrasi gagal");
@@ -70,19 +70,6 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-[#28251d] mb-1.5">
-                Pemasukan Bulanan (Rp) <span className="text-[#7a7974] font-normal">(opsional)</span>
-              </label>
-              <div className="relative">
-                <Wallet size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7a7974]" />
-                <input type="number" min="0" value={form.monthly_income}
-                  onChange={(e) => setForm((p) => ({ ...p, monthly_income: e.target.value }))}
-                  placeholder="Contoh: 8000000"
-                  className="w-full pl-10 pr-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f]" />
-              </div>
-              <p className="text-xs text-[#7a7974] mt-1.5">Otomatis diambil dari data aktual transaksi pemasukan Anda.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#28251d] mb-1.5">
                 Budget Bulanan (Rp) <span className="text-[#7a7974] font-normal">(opsional)</span>
               </label>
               <div className="relative">
@@ -92,7 +79,7 @@ export default function RegisterPage() {
                   placeholder="Contoh: 6000000"
                   className="w-full pl-10 pr-3.5 py-2.5 border border-[#d4d1ca] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#01696f]/30 focus:border-[#01696f]" />
               </div>
-              <p className="text-xs text-[#7a7974] mt-1.5">Batas maksimal pengeluaran bulanan Anda (dapat diatur nanti di menu Anggaran).</p>
+              <p className="text-xs text-[#7a7974] mt-1.5">Batas maksimal pengeluaran bulanan Anda (dapat diatur nanti di menu Anggaran). Pemasukan otomatis dihitung dari transaksi income.</p>
             </div>
             <button type="submit" disabled={loading}
               className="w-full py-2.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-sm font-medium disabled:opacity-60 transition-colors">

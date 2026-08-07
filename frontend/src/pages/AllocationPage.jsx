@@ -21,16 +21,17 @@ const StatusDot = ({ status }) => {
   );
 };
 
-// Static reference rules according to PDF spec
+// Aturan tampilan per kategori untuk kolom Ideal / Waspada / Kritis
 const CATEGORY_DISPLAY_RULES = {
-  Bills: { ideal: "25–35%", warning: "35–45%", critical: ">45%" },
-  "Food & Beverage": { ideal: "≤15%", warning: "15–20%", critical: ">20%" },
-  Health: { ideal: "5–10%", warning: "10–15%", critical: ">15%" },
-  Transport: { ideal: "5–10%", warning: "10–20%", critical: ">20%" },
-  Shopping: { ideal: "≤10%", warning: "10–15%", critical: ">15%" },
-  Entertainment: { ideal: "≤10%", warning: "10–15%", critical: ">15%" },
-  Education: { ideal: "5–10%", warning: "0–5%", critical: "-" },
-  Other: { ideal: "≤5%", warning: "5–10%", critical: ">10%" },
+  Bills:              { ideal: "25–35%",  warning: "35–45%",  critical: ">45%",  inverse: false },
+  "Food & Beverage": { ideal: "≤15%",    warning: "15–20%",  critical: ">20%",  inverse: false },
+  Health:             { ideal: "≤10%",    warning: "10–15%",  critical: ">15%",  inverse: false },
+  Transport:          { ideal: "5–10%",   warning: "10–20%",  critical: ">20%",  inverse: false },
+  Shopping:           { ideal: "≤10%",    warning: "10–15%",  critical: ">15%",  inverse: false },
+  Entertainment:      { ideal: "≤10%",    warning: "10–15%",  critical: ">15%",  inverse: false },
+  // Education bersifat terbalik: semakin kecil pengeluaran = semakin buruk
+  Education:          { ideal: "≥5%",     warning: "0–5%",    critical: "0%",    inverse: true  },
+  Other:              { ideal: "≤5%",     warning: "5–10%",   critical: ">10%",  inverse: false },
 };
 
 export default function AllocationPage() {
@@ -101,11 +102,10 @@ export default function AllocationPage() {
         <>
           {/* TABEL 1: Ringkasan Framework 50/30/20 */}
           <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 shadow-sm space-y-4">
-            <div>
+          <div>
               <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
                 <span>📊</span> Tabel 1. Ringkasan Framework 50/30/20
               </h3>
-              <p className="text-xs text-[#7a7974] mt-1 italic">Ini yang pertama kali dilihat user.</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -160,7 +160,6 @@ export default function AllocationPage() {
               <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
                 <span>📋</span> Tabel 2. Detail Alokasi Kategori (Rule-Based)
               </h3>
-              <p className="text-xs text-[#7a7974] mt-1 italic">Kemudian baru tampil rincian setiap kategori.</p>
             </div>
 
             {/* Group 1: NEEDS */}
@@ -268,7 +267,6 @@ export default function AllocationPage() {
             <h3 className="font-bold text-[#28251d] text-base flex items-center gap-2">
               <span>🤖</span> Rule-Based Recommendation
             </h3>
-            <p className="text-xs text-[#7a7974] italic">Misalnya:</p>
 
             <div className="space-y-3 text-sm text-[#28251d]">
               <p className="font-semibold text-base">
@@ -277,19 +275,25 @@ export default function AllocationPage() {
 
               <div className="space-y-2 pt-1">
                 <p className="flex items-center gap-2">
-                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span className={needsActual <= 50 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
+                    {needsActual <= 50 ? "✓" : "✗"}
+                  </span>
                   <span>
                     Total Needs {needsActual <= 50 ? "masih berada di bawah batas ideal 50%" : `mencapai ${needsActual.toFixed(1)}%, melebihi batas ideal 50%`}.
                   </span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span className={wantsActual <= 30 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>
+                    {wantsActual <= 30 ? "✓" : "✗"}
+                  </span>
                   <span>
                     Total Wants {wantsActual <= 30 ? "masih berada di bawah batas ideal 30%" : `mencapai ${wantsActual.toFixed(1)}%, melebihi batas ideal 30%`}.
                   </span>
                 </p>
                 <p className="flex items-center gap-2">
-                  <span className="text-emerald-600 font-bold">✓</span>
+                  <span className={savingsActual >= 20 ? "text-emerald-600 font-bold" : "text-amber-500 font-bold"}>
+                    {savingsActual >= 20 ? "✓" : "⚠"}
+                  </span>
                   <span>
                     Tabungan {savingsActual >= 20 ? `telah mencapai ${savingsActual}%, melebihi target minimum 20%` : `baru mencapai ${savingsActual}%, kurang dari target minimum 20%`}.
                   </span>
@@ -297,21 +301,21 @@ export default function AllocationPage() {
 
                 {highestNeedsCat && (
                   <p className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
-                    <span className="text-amber-600 font-bold">⚠️</span>
+                    <span className="text-amber-600 font-bold flex-shrink-0">⚠️</span>
                     <span>
-                      Namun, kategori {highestNeedsCat.category} merupakan pengeluaran terbesar dalam kelompok Needs ({highestNeedsCat.actual_pct}%) sehingga perlu dipantau agar tidak meningkat pada bulan berikutnya.
+                      Kategori {highestNeedsCat.category} merupakan pengeluaran terbesar dalam kelompok Needs ({highestNeedsCat.actual_pct}%) sehingga perlu dipantau agar tidak meningkat pada bulan berikutnya.
                     </span>
                   </p>
                 )}
 
                 {(() => {
                   const edu = breakdown.find((b) => b.category === "Education");
-                  if (edu && (edu.actual_pct < 5)) {
+                  if (edu && edu.actual_pct < 5) {
                     return (
                       <p className="flex items-start gap-2 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
-                        <span className="text-amber-600 font-bold">⚠️</span>
+                        <span className="text-amber-600 font-bold flex-shrink-0">⚠️</span>
                         <span>
-                          Pengeluaran Education Anda {edu.actual_pct}%, kurang dari idealnya 5%. Alihkan sebagian pengeluaran ke edukasi ini.
+                          Pengeluaran Education Anda {edu.actual_pct}%, masih di bawah batas ideal minimal 5%. Tingkatkan alokasi untuk investasi pendidikan.
                         </span>
                       </p>
                     );

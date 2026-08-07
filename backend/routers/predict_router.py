@@ -22,16 +22,42 @@ def _get_user_transactions(db: Session, user_id: int):
 
 
 def _estimate_total_income(db: Session, user, transactions: list) -> float:
-    """Gunakan monthly_income yang di-set user, atau fallback rata-rata income transaksi 3 bulan terakhir."""
+    """Hitung total pemasukan:
+    1. Utama: total transaksi income bulan berjalan
+    2. Fallback 1: rata-rata income dari transaksi bulan-bulan sebelumnya (maks 3 bulan)
+    3. Fallback 2: monthly_income dari profil user (diset saat registrasi)
+    """
+    from datetime import datetime
+    now = datetime.now()
+    current_month = now.strftime("%Y-%m")
+
+    # Sumber 1: income transaksi bulan berjalan
+    current_month_income = sum(
+        t["amount"] for t in transactions
+        if t["type"] == "income" and t["tx_date"][:7] == current_month
+    )
+    if current_month_income > 0:
+        return current_month_income
+
+    # Sumber 2: rata-rata income dari transaksi historis (maks 3 bulan terakhir)
+    income_txs = [t for t in transactions if t["type"] == "income"]
+    if income_txs:
+        months_with_income = {}
+        for t in income_txs:
+            month_key = t["tx_date"][:7]
+            months_with_income[month_key] = months_with_income.get(month_key, 0) + t["amount"]
+        # Ambil 3 bulan terakhir yang ada income
+        sorted_months = sorted(months_with_income.keys(), reverse=True)[:3]
+        if sorted_months:
+            avg_income = sum(months_with_income[m] for m in sorted_months) / len(sorted_months)
+            return round(avg_income, 0)
+
+    # Sumber 3: fallback ke monthly_income profil user
     if user.monthly_income and float(user.monthly_income) > 0:
         return float(user.monthly_income)
 
-    income_txs = [t for t in transactions if t["type"] == "income"]
-    if not income_txs:
-        return 0.0
-    total = sum(t["amount"] for t in income_txs)
-    months_span = max(1, len(set(t["tx_date"][:7] for t in income_txs)))
-    return round(total / months_span, 0)
+    return 0.0
+
 
 
 @router.get("")

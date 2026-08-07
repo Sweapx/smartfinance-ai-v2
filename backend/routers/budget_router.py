@@ -25,7 +25,7 @@ def get_budget(current_user: User = Depends(get_current_user), db: Session = Dep
         Transaction.tx_date <= today
     ).all()
     
-    # Calculate total actual income for current month (or all time if no transactions this month)
+    # Pemasukan bulanan = total transaksi income bulan berjalan (sumber utama)
     incomes = db.query(Transaction).filter(
         Transaction.user_id == current_user.id,
         Transaction.type == "income",
@@ -33,16 +33,7 @@ def get_budget(current_user: User = Depends(get_current_user), db: Session = Dep
         Transaction.tx_date <= today
     ).all()
     
-    actual_income_month = sum(float(tx.amount) for tx in incomes) if incomes else 0.0
-    if actual_income_month == 0.0:
-        # Fallback to total income transactions overall if current month has none
-        all_incomes = db.query(Transaction).filter(
-            Transaction.user_id == current_user.id,
-            Transaction.type == "income"
-        ).all()
-        actual_income_month = sum(float(tx.amount) for tx in all_incomes) if all_incomes else 0.0
-
-    monthly_income = actual_income_month if actual_income_month > 0 else float(current_user.monthly_income or 0)
+    monthly_income = sum(float(tx.amount) for tx in incomes) if incomes else 0.0
     budget_used = sum(float(tx.amount) for tx in expenses) if expenses else 0.0
     monthly_budget = float(current_user.monthly_budget or 0)
     budget_remaining = monthly_budget - budget_used
