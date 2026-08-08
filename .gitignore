@@ -90,3 +90,4 @@ htmlcov/
 dummy_data.csv
 statis_data.csv
 backend-deploy.zip
+*.zip

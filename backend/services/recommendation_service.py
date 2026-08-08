@@ -100,9 +100,28 @@ def calculate_financial_health(category_amounts: dict, total_income: float) -> d
         }
     """
     if total_income <= 0:
+        default_breakdown = []
+        for category, rule in ALLOCATION_TABLE.items():
+            default_breakdown.append({
+                "category": category,
+                "tipe": rule["tipe"],
+                "actual_pct": 0.0,
+                "ideal_pct": rule["ideal"],
+                "warning_pct": rule["warning"],
+                "critical_pct": rule["critical"],
+                "status": "safe",
+                "inverse": rule.get("inverse", False),
+                "recommendation": f"Pengeluaran {category} belum tercatat. Pertahankan di bawah batas ideal ({rule['ideal']}%).",
+            })
         return {
-            "score": 0, "label": "Data Tidak Cukup", "total_penalty": 0,
-            "breakdown": [], "savings_pct": 0, "main_allocation": MAIN_ALLOCATION_SUMMARY,
+            "score": 100,
+            "label": "Data Belum Cukup",
+            "total_penalty": 0,
+            "breakdown": default_breakdown,
+            "savings_pct": 0.0,
+            "savings_ideal_pct": SAVINGS_IDEAL_PCT,
+            "savings_status": "safe",
+            "main_allocation": MAIN_ALLOCATION_SUMMARY,
         }
 
     breakdown = []

@@ -24,14 +24,27 @@ from services.allocation_table import (
 
 
 def _status_and_penalty(actual_pct: float, rule: dict) -> tuple[str, int]:
-    """Mengembalikan (status, penalty) berdasarkan tier tertinggi yang terlampaui."""
-    if actual_pct > rule["critical"]:
-        return "danger", -15
-    if actual_pct > rule["warning"]:
-        return "warning", -10
-    if actual_pct > rule["ideal"]:
-        return "caution", -5
-    return "safe", 0
+    """Mengembalikan (status, penalty) berdasarkan tier tertinggi yang terlampaui.
+    
+    Untuk kategori normal (inverse=False): semakin besar actual_pct = semakin buruk.
+    Untuk kategori inverse (inverse=True, mis. Education): semakin kecil actual_pct = semakin buruk.
+    """
+    is_inverse = rule.get("inverse", False)
+    
+    if is_inverse:
+        if actual_pct <= rule["critical"]:
+            return "danger", -15
+        if actual_pct < rule["warning"]:
+            return "caution", -5
+        return "safe", 0
+    else:
+        if actual_pct > rule["critical"]:
+            return "danger", -15
+        if actual_pct > rule["warning"]:
+            return "warning", -10
+        if actual_pct > rule["ideal"]:
+            return "caution", -5
+        return "safe", 0
 
 
 def _score_label(score: int) -> str:
@@ -44,36 +57,51 @@ def _score_label(score: int) -> str:
     return "Tidak Sehat"
 
 
-def generate_recommendation_text(category: str, actual_pct: float, ideal_pct: float, status: str) -> str:
-    excess = round(actual_pct - ideal_pct, 1)
-    if status == "safe":
-        return f"Pengeluaran {category} Anda {actual_pct}%, masih dalam batas ideal ({ideal_pct}%). Pertahankan kebiasaan ini!"
-    if status == "danger":
-        return (f"Pengeluaran {category} Anda {actual_pct}% sudah masuk kategori KRITIS "
-                f"(melebihi batas aman {ideal_pct}% sebesar {excess}%). Segera evaluasi dan kurangi pengeluaran ini bulan depan.")
-    return (f"Pengeluaran {category} Anda {actual_pct}%, melebihi rekomendasi {ideal_pct}%. "
-            f"Kurangi sekitar {excess}% dan alihkan ke tabungan atau kebutuhan prioritas.")
+def generate_recommendation_text(category: str, actual_pct: float, ideal_pct: float, status: str, is_inverse: bool = False) -> str:
+    if is_inverse:
+        shortfall = round(ideal_pct - actual_pct, 1)
+        if status == "safe":
+            return f"Pengeluaran {category} Anda {actual_pct}%, sudah memenuhi batas ideal minimal {ideal_pct}%. Pertahankan!"
+        if status == "danger":
+            return (f"Pengeluaran {category} Anda {actual_pct}%, belum ada alokasi sama sekali. "
+                    f"Segera alihkan minimal {ideal_pct}% pemasukan untuk investasi pendidikan.")
+        return (f"Pengeluaran {category} Anda {actual_pct}%, masih di bawah rekomendasi minimal {ideal_pct}%. "
+                f"Tingkatkan sekitar {shortfall}% agar sesuai target alokasi pendidikan.")
+    else:
+        excess = round(actual_pct - ideal_pct, 1)
+        if status == "safe":
+            return f"Pengeluaran {category} Anda {actual_pct}%, masih dalam batas ideal ({ideal_pct}%). Pertahankan kebiasaan ini!"
+        if status == "danger":
+            return (f"Pengeluaran {category} Anda {actual_pct}% sudah masuk kategori KRITIS "
+                    f"(melebihi batas aman {ideal_pct}% sebesar {excess}%). Segera evaluasi dan kurangi pengeluaran ini bulan depan.")
+        return (f"Pengeluaran {category} Anda {actual_pct}%, melebihi rekomendasi {ideal_pct}%. "
+                f"Kurangi sekitar {excess}% dan alihkan ke tabungan atau kebutuhan prioritas.")
 
 
 def calculate_financial_health(category_amounts: dict, total_income: float) -> dict:
-    """
-    category_amounts: dict {kategori: nominal_prediksi_atau_aktual}
-    total_income: total pemasukan bulanan pengguna (Rupiah)
-
-    Return:
-        {
-            "score": int,
-            "label": str,
-            "total_penalty": int,
-            "breakdown": [ {category, actual_pct, ideal_pct, warning_pct, critical_pct, status, recommendation}, ... ],
-            "savings_pct": float,
-            "main_allocation": {...}
-        }
-    """
     if total_income <= 0:
+        default_breakdown = []
+        for category, rule in ALLOCATION_TABLE.items():
+            default_breakdown.append({
+                "category": category,
+                "tipe": rule["tipe"],
+                "actual_pct": 0.0,
+                "ideal_pct": rule["ideal"],
+                "warning_pct": rule["warning"],
+                "critical_pct": rule["critical"],
+                "status": "safe",
+                "inverse": rule.get("inverse", False),
+                "recommendation": f"Pengeluaran {category} belum tercatat. Pertahankan di bawah batas ideal ({rule['ideal']}%).",
+            })
         return {
-            "score": 0, "label": "Data Tidak Cukup", "total_penalty": 0,
-            "breakdown": [], "savings_pct": 0, "main_allocation": MAIN_ALLOCATION_SUMMARY,
+            "score": 100,
+            "label": "Data Belum Cukup",
+            "total_penalty": 0,
+            "breakdown": default_breakdown,
+            "savings_pct": 0.0,
+            "savings_ideal_pct": SAVINGS_IDEAL_PCT,
+            "savings_status": "safe",
+            "main_allocation": MAIN_ALLOCATION_SUMMARY,
         }
 
     breakdown = []
@@ -83,12 +111,14 @@ def calculate_financial_health(category_amounts: dict, total_income: float) -> d
     for category, rule in ALLOCATION_TABLE.items():
         amount = category_amounts.get(category, 0)
         actual_pct = round((amount / total_income) * 100, 1)
+        is_inverse = rule.get("inverse", False)
+        
         total_expense_pct += actual_pct
 
         status, penalty = _status_and_penalty(actual_pct, rule)
         total_penalty += penalty
 
-        recommendation = generate_recommendation_text(category, actual_pct, rule["ideal"], status)
+        recommendation = generate_recommendation_text(category, actual_pct, rule["ideal"], status, is_inverse)
 
         breakdown.append({
             "category": category,
@@ -98,6 +128,7 @@ def calculate_financial_health(category_amounts: dict, total_income: float) -> d
             "warning_pct": rule["warning"],
             "critical_pct": rule["critical"],
             "status": status,
+            "inverse": is_inverse,
             "recommendation": recommendation,
         })
 
@@ -105,7 +136,6 @@ def calculate_financial_health(category_amounts: dict, total_income: float) -> d
     score = max(0, 100 - abs(total_penalty))
     label = _score_label(score)
 
-    # Penalty tambahan jika tabungan di bawah ideal 20%
     savings_status = "safe"
     if savings_pct < SAVINGS_IDEAL_PCT * 0.5:
         savings_status = "danger"
@@ -129,7 +159,6 @@ def calculate_financial_health(category_amounts: dict, total_income: float) -> d
 
 
 def get_top_recommendations(health_result: dict, limit: int = 3) -> list:
-    """Ambil rekomendasi paling kritis untuk ditampilkan di dashboard / dikirim ke chatbot."""
     issues = [b for b in health_result["breakdown"] if b["status"] != "safe"]
     issues.sort(key=lambda x: (x["status"] != "danger", -(x["actual_pct"] - x["ideal_pct"])))
     return issues[:limit]

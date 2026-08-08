@@ -56,6 +56,10 @@ def _estimate_total_income(db: Session, user, transactions: list) -> float:
     if user.monthly_income and float(user.monthly_income) > 0:
         return float(user.monthly_income)
 
+    # Sumber 4: fallback ke monthly_budget profil user jika diset
+    if user.monthly_budget and float(user.monthly_budget) > 0:
+        return float(user.monthly_budget)
+
     return 0.0
 
 

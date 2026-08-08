@@ -23,10 +23,10 @@ const StatusDot = ({ status }) => {
 
 // Aturan tampilan per kategori untuk kolom Ideal / Waspada / Kritis
 const CATEGORY_DISPLAY_RULES = {
-  Bills: { ideal: "25–35%", warning: "35–45%", critical: ">45%", inverse: false },
+  Bills: { ideal: "≤15%", warning: "15–20%", critical: ">20%", inverse: false },
   "Food & Beverage": { ideal: "≤15%", warning: "15–20%", critical: ">20%", inverse: false },
   Health: { ideal: "≤10%", warning: "10–15%", critical: ">15%", inverse: false },
-  Transport: { ideal: "5–10%", warning: "10–20%", critical: ">20%", inverse: false },
+  Transport: { ideal: "≤10%", warning: "10–20%", critical: ">20%", inverse: false },
   Shopping: { ideal: "≤10%", warning: "10–15%", critical: ">15%", inverse: false },
   Entertainment: { ideal: "≤10%", warning: "10–15%", critical: ">15%", inverse: false },
   // Education bersifat terbalik: semakin kecil pengeluaran = semakin buruk
@@ -314,20 +314,31 @@ export default function AllocationPage() {
                   </div>
                 )}
 
-                {(() => {
-                  const edu = breakdown.find((b) => b.category === "Education");
-                  if (edu && edu.actual_pct < 5) {
-                    return (
-                      <div className="flex items-start gap-2.5 text-amber-800 bg-amber-50 p-3 rounded-lg border border-amber-200 mt-2">
-                        <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                        <span>
-                          Pengeluaran Education Anda {edu.actual_pct}%, masih di bawah batas ideal minimal 5%. Tingkatkan alokasi untuk investasi pendidikan.
-                        </span>
+                {breakdown.filter((b) => b.status !== "safe").length > 0 && (
+                  <div className="space-y-2 pt-3 border-t border-[#f3f0ec]">
+                    <p className="font-semibold text-xs text-[#7a7974] uppercase tracking-wider">
+                      Tindakan Rekomendasi per Kategori:
+                    </p>
+                    {breakdown.filter((b) => b.status !== "safe").map((b) => (
+                      <div
+                        key={b.category}
+                        className={`flex items-start gap-2.5 p-3 rounded-lg border text-xs leading-relaxed ${
+                          b.status === "danger"
+                            ? "bg-red-50 border-red-200 text-red-800"
+                            : "bg-amber-50 border-amber-200 text-amber-800"
+                        }`}
+                      >
+                        <AlertTriangle
+                          size={15}
+                          className={`flex-shrink-0 mt-0.5 ${
+                            b.status === "danger" ? "text-red-600" : "text-amber-600"
+                          }`}
+                        />
+                        <span>{b.recommendation}</span>
                       </div>
-                    );
-                  }
-                  return null;
-                })()}
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
