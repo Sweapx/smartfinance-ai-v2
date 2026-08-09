@@ -16,6 +16,7 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     transactions = relationship("Transaction", back_populates="owner", cascade="all, delete-orphan")
+    category_budgets = relationship("CategoryBudget", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Transaction(Base):
@@ -31,3 +32,17 @@ class Transaction(Base):
     created_at = Column(DateTime, server_default=func.now())
 
     owner = relationship("User", back_populates="transactions")
+
+
+class CategoryBudget(Base):
+    __tablename__ = "category_budgets"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category = Column(String(50), nullable=False)
+    amount = Column(DECIMAL(15, 2), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    owner = relationship("User", back_populates="category_budgets")
+

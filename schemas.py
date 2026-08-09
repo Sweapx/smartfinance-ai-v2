@@ -86,12 +86,39 @@ class BudgetUpdate(BaseModel):
     monthly_budget: float
 
 
+class CategoryBudgetCreate(BaseModel):
+    category: str
+    amount: float
+
+
+class CategoryBudgetUpdate(BaseModel):
+    amount: float
+
+
+class CategoryBudgetOut(BaseModel):
+    id: int
+    category: str
+    amount: float
+    spent: float = 0.0
+    remaining: float = 0.0
+    percentage: float = 0.0
+    status: str = "safe"
+    group: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 class BudgetOut(BaseModel):
     monthly_budget: float
     monthly_income: float
     budget_used: float
     budget_remaining: float
     budget_percentage: float
+    total_category_budget: float = 0.0
+    category_budgets: List[CategoryBudgetOut] = []
 
     class Config:
         from_attributes = True
+

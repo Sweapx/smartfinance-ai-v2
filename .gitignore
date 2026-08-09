@@ -31,9 +31,9 @@ ENV/
 .env.local
 .env.*.local
 
-# Allow local environment files in local folder
-!local/.env
-!local/.env.local
+# Local scratch
+local/
+
 
 # Database
 *.db

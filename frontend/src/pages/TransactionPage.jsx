@@ -120,7 +120,17 @@ export default function TransactionPage() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {modal && (<TransactionModal tx={modal === "new" ? null : modal} onClose={() => setModal(null)} onSave={() => { setModal(null); fetchTransactions(); }} />)}
+      {modal && (
+        <TransactionModal
+          key={modal === "new" ? "new" : modal.id}
+          tx={modal === "new" ? null : modal}
+          onClose={() => setModal(null)}
+          onSave={() => {
+            setModal(null);
+            fetchTransactions();
+          }}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl p-4 border border-[#dcd9d5] flex items-center gap-3">
