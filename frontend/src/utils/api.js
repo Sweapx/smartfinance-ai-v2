@@ -1,7 +1,17 @@
 import axios from "axios";
 
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return "http://localhost:8000/api/v1";
+    }
+  }
+  return import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
+  baseURL: getBaseUrl(),
 });
 
 api.interceptors.request.use((config) => {
