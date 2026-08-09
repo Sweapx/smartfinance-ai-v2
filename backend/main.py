@@ -14,7 +14,10 @@ load_dotenv()
 logger = setup_logging()
 logger.info("Starting SmartFinance AI API...")
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    logger.warning(f"Database table creation note: {e}")
 
 app = FastAPI(
     title="SmartFinance AI API",
@@ -22,20 +25,22 @@ app = FastAPI(
     version="2.0.0",
 )
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-# Configure CORS based on environment
-if ENVIRONMENT == "production":
-    # Production: Only allow specific frontend domain
-    allowed_origins = [FRONTEND_URL]
-else:
-    # Development: Allow localhost for testing
-    allowed_origins = [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"]
+allowed_origins = [
+    "*",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://calm-rock-018756a00.7.azurestaticapps.net",
+    "https://smartfinance-frontend.azurestaticapps.net",
+]
+if FRONTEND_URL and FRONTEND_URL != "*":
+    allowed_origins.append(FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,10 +58,14 @@ def root():
     return {
         "app": "SmartFinance AI",
         "status": "running",
-        "services": ["Forecasting Service (LSTM)", "Recommendation Service (Rule-Based 50/30/20)", "LLM Chatbot Service (Groq)"],
+        "services": [
+            "Forecasting Service (LSTM)",
+            "Recommendation Service (Rule-Based 50/30/20)",
+            "LLM Chatbot Service (Groq)",
+        ],
     }
 
 
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "ok"}

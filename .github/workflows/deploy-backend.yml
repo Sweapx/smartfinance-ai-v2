@@ -1,0 +1,42 @@
+name: Deploy Backend to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - 'routers/**'
+      - 'services/**'
+      - 'main.py'
+      - 'database.py'
+      - 'models.py'
+      - 'schemas.py'
+      - 'auth.py'
+      - 'logging_config.py'
+      - 'requirements.txt'
+      - 'runtime.txt'
+      - 'startup.sh'
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    name: Build and Deploy Backend API
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: smartfinance-api-v2
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .

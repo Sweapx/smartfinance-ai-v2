@@ -7,7 +7,8 @@ const getBaseUrl = () => {
       return "http://localhost:8000/api/v1";
     }
   }
-  return import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+  // Production: use Azure backend API
+  return import.meta.env.VITE_API_URL || "https://smartfinance-api-v2.azurewebsites.net/api/v1";
 };
 
 const api = axios.create({
