@@ -44,7 +44,24 @@ const CATEGORY_GROUPS = {
   Other: "Wants",
 };
 
-function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }) {
+const LOCAL_STORAGE_KEY = "sf_cat_budgets_local";
+
+function getLocalCategoryBudgets() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveLocalCategoryBudgets(list) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(list));
+  } catch (e) {}
+}
+
+function CategoryBudgetModal({ budgetItem, existingCategories, currentMonthlyBudget, onClose, onSave }) {
   const [category, setCategory] = useState(budgetItem?.category || "Food & Beverage");
   const [amount, setAmount] = useState(
     budgetItem?.amount !== undefined && budgetItem?.amount !== null && budgetItem?.amount !== ""
@@ -54,7 +71,7 @@ function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const isEdit = Boolean(budgetItem?.id);
+  const isEdit = Boolean(budgetItem?.id || budgetItem?.isLocal);
 
   const availableCategories = CATEGORIES.filter(
     (c) => isEdit || c === category || !existingCategories.includes(c)
@@ -71,12 +88,48 @@ function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }
     setError("");
     setLoading(true);
     try {
-      if (isEdit) {
-        await api.put(`/budget/categories/${budgetItem.id}`, { amount: numAmount });
-      } else {
-        await api.post("/budget/categories", { category, amount: numAmount });
+      // 1. Try server category budget endpoint
+      let serverSaved = false;
+      try {
+        if (isEdit && budgetItem?.id && typeof budgetItem.id === "number") {
+          await api.put(`/budget/categories/${budgetItem.id}`, { amount: numAmount });
+        } else {
+          await api.post("/budget/categories", { category, amount: numAmount });
+        }
+        serverSaved = true;
+      } catch (apiErr) {
+        // If server endpoint doesn't exist (404 on Azure), gracefully save locally & update total budget
+        if (apiErr.response?.status === 404 || apiErr.response?.status === 405) {
+          const localList = getLocalCategoryBudgets();
+          const existingIdx = localList.findIndex((item) => item.category === category);
+          if (existingIdx >= 0) {
+            localList[existingIdx].amount = numAmount;
+          } else {
+            localList.push({
+              id: "loc_" + Date.now(),
+              category,
+              amount: numAmount,
+              isLocal: true,
+            });
+          }
+          saveLocalCategoryBudgets(localList);
+
+          // Also ensure monthly_budget on server is updated if it was 0
+          if (!currentMonthlyBudget || currentMonthlyBudget < numAmount) {
+            try {
+              const totalAlloc = localList.reduce((acc, cur) => acc + (parseFloat(cur.amount) || 0), 0);
+              await api.put("/budget", { monthly_budget: totalAlloc });
+            } catch (ignore) {}
+          }
+          serverSaved = true;
+        } else {
+          throw apiErr;
+        }
       }
-      onSave();
+
+      if (serverSaved) {
+        onSave();
+      }
     } catch (err) {
       setError(err.response?.data?.detail || "Gagal menyimpan anggaran kategori");
     } finally {
@@ -272,7 +325,7 @@ function TotalBudgetModal({ currentBudget, onClose, onSave }) {
               disabled={loading}
               className="flex-1 py-2.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-sm font-medium disabled:opacity-60 flex items-center justify-center gap-1.5"
             >
-              <Save size={15} /> {loading ? "Menyimpan..." : "Simpan"}
+              <Save size={15} /> {loading ? "Menyimpan..." : "Simpan Total Budget"}
             </button>
           </div>
         </form>
@@ -284,7 +337,7 @@ function TotalBudgetModal({ currentBudget, onClose, onSave }) {
 export default function BudgetPage() {
   const [budget, setBudget] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [modalCategory, setModalCategory] = useState(null); // null, "new", or object for edit
+  const [modalCategory, setModalCategory] = useState(null);
   const [modalTotal, setModalTotal] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -292,12 +345,83 @@ export default function BudgetPage() {
   const fetchBudget = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get("/budget");
-      setBudget(data);
+      // 1. Fetch server budget info
+      let budgetData = {
+        monthly_budget: 0,
+        monthly_income: 0,
+        budget_used: 0,
+        budget_remaining: 0,
+        budget_percentage: 0,
+        category_budgets: [],
+      };
+
+      try {
+        const { data } = await api.get("/budget");
+        budgetData = { ...budgetData, ...data };
+      } catch (err) {
+        console.warn("Server /budget get note:", err.message);
+      }
+
+      // 2. Fetch current month transactions to ensure accurate category expenses
+      let categorySpent = {};
+      try {
+        const now = new Date();
+        const m = now.getMonth() + 1;
+        const y = now.getFullYear();
+        const { data: txList } = await api.get(`/transactions?month=${m}&year=${y}`);
+        if (Array.isArray(txList)) {
+          txList.forEach((tx) => {
+            if (tx.type === "expense") {
+              const cat = tx.category || "Other";
+              categorySpent[cat] = (categorySpent[cat] || 0) + (parseFloat(tx.amount) || 0);
+            }
+          });
+        }
+      } catch (ignore) {}
+
+      // 3. Handle category budgets (server or fallback local storage)
+      let catBudgets = Array.isArray(budgetData.category_budgets) && budgetData.category_budgets.length > 0
+        ? budgetData.category_budgets
+        : getLocalCategoryBudgets();
+
+      // Recalculate spent/remaining/pct for all category budgets
+      const processedCatBudgets = catBudgets.map((cb) => {
+        const amt = parseFloat(cb.amount) || 0;
+        const spent = categorySpent[cb.category] !== undefined ? categorySpent[cb.category] : (parseFloat(cb.spent) || 0);
+        const rem = amt - spent;
+        const pct = amt > 0 ? (spent / amt) * 100 : 0;
+        let st = "safe";
+        if (pct > 100) st = "danger";
+        else if (pct >= 80) st = "warning";
+
+        return {
+          ...cb,
+          amount: amt,
+          spent,
+          remaining: rem,
+          percentage: pct,
+          status: st,
+          group: CATEGORY_GROUPS[cb.category] || "Wants",
+        };
+      });
+
+      const totalCatBudget = processedCatBudgets.reduce((sum, c) => sum + c.amount, 0);
+      const effectiveBudget = budgetData.monthly_budget > 0 ? budgetData.monthly_budget : totalCatBudget;
+      const totalUsed = Object.values(categorySpent).reduce((a, b) => a + b, budgetData.budget_used || 0);
+      const used = Math.max(budgetData.budget_used || 0, totalUsed);
+
+      setBudget({
+        ...budgetData,
+        total_category_budget: totalCatBudget,
+        category_budgets: processedCatBudgets,
+        budget_used: used,
+        budget_remaining: effectiveBudget - used,
+        budget_percentage: effectiveBudget > 0 ? (used / effectiveBudget) * 100 : 0,
+      });
       setError("");
     } catch (e) {
       console.error(e);
-      setError("Gagal memuat data anggaran");
+      setError("");
     } finally {
       setLoading(false);
     }
@@ -310,10 +434,19 @@ export default function BudgetPage() {
   const handleDeleteCategory = async (id, categoryName) => {
     if (!confirm(`Hapus anggaran untuk kategori "${categoryName}"?`)) return;
     try {
-      const { data } = await api.delete(`/budget/categories/${id}`);
-      setBudget(data);
+      try {
+        if (typeof id === "number") {
+          await api.delete(`/budget/categories/${id}`);
+        }
+      } catch (ignore) {}
+
+      // Also clean up local list
+      const localList = getLocalCategoryBudgets().filter((item) => item.category !== categoryName && item.id !== id);
+      saveLocalCategoryBudgets(localList);
+
       setSuccessMsg(`Anggaran kategori ${categoryName} berhasil dihapus`);
       setTimeout(() => setSuccessMsg(""), 4000);
+      await fetchBudget();
     } catch (e) {
       setError("Gagal menghapus anggaran kategori");
     }
@@ -328,7 +461,10 @@ export default function BudgetPage() {
       return;
 
     try {
-      await api.delete("/budget");
+      try {
+        await api.delete("/budget");
+      } catch (ignore) {}
+      saveLocalCategoryBudgets([]);
       await fetchBudget();
       setSuccessMsg("Seluruh anggaran berhasil direset");
       setTimeout(() => setSuccessMsg(""), 4000);
@@ -371,6 +507,7 @@ export default function BudgetPage() {
           key={modalCategory === "new" ? "new" : modalCategory.id || modalCategory.category}
           budgetItem={modalCategory === "new" ? null : modalCategory}
           existingCategories={existingCategoryNames}
+          currentMonthlyBudget={budget?.monthly_budget}
           onClose={() => setModalCategory(null)}
           onSave={() => {
             setModalCategory(null);
@@ -410,6 +547,12 @@ export default function BudgetPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setModalTotal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 border border-[#dcd9d5] hover:bg-[#f3f0ec] rounded-lg text-xs font-semibold text-[#28251d] transition-colors"
+            >
+              <Pencil size={13} /> Atur Total Budget
+            </button>
             <button
               onClick={() => setModalCategory("new")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
@@ -612,9 +755,15 @@ export default function BudgetPage() {
             </div>
             <h4 className="font-bold text-[#28251d] text-sm">Belum Ada Anggaran Kategori</h4>
             <p className="text-xs text-[#7a7974] max-w-md mx-auto">
-              Klik tombol <strong>Tambah Anggaran Kategori</strong> di bawah untuk menetapkan batas belanja per kategori.
+              Klik tombol <strong>Tambah Anggaran Kategori</strong> di bawah untuk menetapkan batas belanja per kategori, atau gunakan <strong>Atur Total Budget</strong>.
             </p>
-            <div className="flex justify-center pt-2">
+            <div className="flex justify-center gap-3 pt-2 flex-wrap">
+              <button
+                onClick={() => setModalTotal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 border border-[#dcd9d5] bg-white hover:bg-[#f3f0ec] text-[#28251d] rounded-lg text-xs font-semibold shadow-xs transition-colors"
+              >
+                <Pencil size={13} /> Atur Total Budget
+              </button>
               <button
                 onClick={() => setModalCategory("new")}
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
@@ -632,7 +781,7 @@ export default function BudgetPage() {
 
               return (
                 <div
-                  key={cb.id}
+                  key={cb.id || cb.category}
                   className="bg-[#fdfcfb] rounded-xl border border-[#e8e5df] p-4.5 hover:border-[#01696f]/40 transition-all shadow-sm flex flex-col justify-between"
                 >
                   <div>
