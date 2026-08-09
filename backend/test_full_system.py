@@ -138,20 +138,23 @@ def run_tests():
     assert float(fb_updated["amount"]) == 2000000
     print("[PASS] Updated Category Budget 'Food & Beverage' to 2,000,000")
 
-    # 5e. Auto-allocate 50/30/20
-    auto_res = client.post("/api/v1/budget/auto-allocate", headers=headers)
-    assert auto_res.status_code == 200, f"Auto-allocate failed: {auto_res.text}"
-    auto_cats = auto_res.json()["category_budgets"]
-    assert len(auto_cats) >= 8, f"Expected 8 category budgets from auto-allocate, got {len(auto_cats)}"
-    print(f"[PASS] Auto 50/30/20 Allocation: generated {len(auto_cats)} category budgets successfully")
+    # 5e. Create Second Category Budget (Transport)
+    cat_res2 = client.post("/api/v1/budget/categories", json={
+        "category": "Transport",
+        "amount": 750000
+    }, headers=headers)
+    assert cat_res2.status_code == 201, f"Create transport budget failed: {cat_res2.text}"
+    cat_budgets2 = cat_res2.json()["category_budgets"]
+    assert len(cat_budgets2) >= 2
+    print(f"[PASS] Created Second Category Budget 'Transport': 750,000")
 
     # 5f. Delete Category Budget by ID
-    first_cat = auto_cats[0]
-    del_cat_res = client.delete(f"/api/v1/budget/categories/{first_cat['id']}", headers=headers)
+    del_cat_res = client.delete(f"/api/v1/budget/categories/{fb_budget['id']}", headers=headers)
     assert del_cat_res.status_code == 200, f"Delete category budget failed: {del_cat_res.text}"
     remaining_cats = del_cat_res.json()["category_budgets"]
-    assert not any(c["id"] == first_cat["id"] for c in remaining_cats)
-    print(f"[PASS] Deleted Category Budget ID {first_cat['id']} ({first_cat['category']})")
+    assert not any(c["id"] == fb_budget["id"] for c in remaining_cats)
+    print(f"[PASS] Deleted Category Budget ID {fb_budget['id']} ({fb_budget['category']})")
+
 
     # 6. Test Forecasting, Health Score, Dashboard & Chat
     print("\n--- Testing Prediction, Health Score, Dashboard & Chat ---")

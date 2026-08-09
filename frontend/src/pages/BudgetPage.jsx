@@ -7,12 +7,8 @@ import {
   Trash2,
   AlertTriangle,
   CheckCircle,
-  Sparkles,
-  PieChart,
   X,
   Save,
-  ArrowRight,
-  TrendingDown,
   Layers,
   Utensils,
   Car,
@@ -50,13 +46,16 @@ const CATEGORY_GROUPS = {
 
 function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }) {
   const [category, setCategory] = useState(budgetItem?.category || "Food & Beverage");
-  const [amount, setAmount] = useState(budgetItem?.amount ? budgetItem.amount.toString() : "");
+  const [amount, setAmount] = useState(
+    budgetItem?.amount !== undefined && budgetItem?.amount !== null && budgetItem?.amount !== ""
+      ? budgetItem.amount.toString()
+      : ""
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const isEdit = Boolean(budgetItem?.id);
 
-  // Filter available categories for new budget, or all categories
   const availableCategories = CATEGORIES.filter(
     (c) => isEdit || c === category || !existingCategories.includes(c)
   );
@@ -65,7 +64,7 @@ function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }
     e.preventDefault();
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      setError("Nominal anggaran harus lebih besar dari 0");
+      setError("Nominal anggaran harus berupa angka lebih besar dari 0");
       return;
     }
 
@@ -141,7 +140,7 @@ function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }
               type="number"
               required
               min="1"
-              step="1000"
+              step="any"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Contoh: 1500000"
@@ -157,12 +156,12 @@ function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }
           <div>
             <p className="text-xs text-[#7a7974] mb-2 font-medium">Tambah Cepat Nominal:</p>
             <div className="flex gap-2 flex-wrap">
-              {[250000, 500000, 1000000, 2000000].map((val) => (
+              {[100000, 250000, 500000, 1000000].map((val) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => addPreset(val)}
-                  className="px-2.5 py-1 text-xs border border-[#dcd9d5] rounded-md bg-[#f9f8f5] hover:bg-[#f3f0ec] text-[#28251d]"
+                  className="px-2.5 py-1 text-xs border border-[#dcd9d5] rounded-md bg-[#f9f8f5] hover:bg-[#f3f0ec] text-[#28251d] transition-colors"
                 >
                   +{formatRupiah(val).replace("Rp ", "")}
                 </button>
@@ -193,7 +192,11 @@ function CategoryBudgetModal({ budgetItem, existingCategories, onClose, onSave }
 }
 
 function TotalBudgetModal({ currentBudget, onClose, onSave }) {
-  const [amount, setAmount] = useState(currentBudget ? currentBudget.toString() : "");
+  const [amount, setAmount] = useState(
+    currentBudget !== undefined && currentBudget !== null && currentBudget !== ""
+      ? currentBudget.toString()
+      : ""
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -241,7 +244,7 @@ function TotalBudgetModal({ currentBudget, onClose, onSave }) {
               type="number"
               required
               min="0"
-              step="50000"
+              step="any"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Contoh: 5000000"
@@ -254,7 +257,7 @@ function TotalBudgetModal({ currentBudget, onClose, onSave }) {
             )}
           </div>
           <p className="text-xs text-[#7a7974] leading-relaxed">
-            Total budget ini menjadi acuan batas maksimal seluruh pengeluaran bulanan Anda. Anda juga dapat menentukan alokasi detail per kategori di bawah.
+            Total budget ini menjadi acuan batas maksimal seluruh pengeluaran bulanan Anda. Anda juga dapat menentukan alokasi per kategori di bawah.
           </p>
           <div className="flex gap-3 pt-2">
             <button
@@ -281,7 +284,6 @@ function TotalBudgetModal({ currentBudget, onClose, onSave }) {
 export default function BudgetPage() {
   const [budget, setBudget] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
   const [modalCategory, setModalCategory] = useState(null); // null, "new", or object for edit
   const [modalTotal, setModalTotal] = useState(false);
   const [error, setError] = useState("");
@@ -292,6 +294,7 @@ export default function BudgetPage() {
     try {
       const { data } = await api.get("/budget");
       setBudget(data);
+      setError("");
     } catch (e) {
       console.error(e);
       setError("Gagal memuat data anggaran");
@@ -313,31 +316,6 @@ export default function BudgetPage() {
       setTimeout(() => setSuccessMsg(""), 4000);
     } catch (e) {
       setError("Gagal menghapus anggaran kategori");
-    }
-  };
-
-  const handleAutoAllocate = async () => {
-    if (
-      !confirm(
-        "Terapkan Auto Alokasi 50/30/20? Sistem akan otomatis menghitung dan membuat anggaran untuk 8 kategori kebutuhan dan keinginan."
-      )
-    )
-      return;
-
-    setActionLoading(true);
-    setError("");
-    try {
-      const { data } = await api.post("/budget/auto-allocate");
-      setBudget(data);
-      setSuccessMsg("Auto Alokasi 50/30/20 berhasil diterapkan!");
-      setTimeout(() => setSuccessMsg(""), 4000);
-    } catch (e) {
-      setError(
-        e.response?.data?.detail ||
-          "Gagal menerapkan Auto Alokasi. Pastikan Total Budget atau Transaksi Pemasukan sudah terisi."
-      );
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -390,11 +368,14 @@ export default function BudgetPage() {
       {/* Modals */}
       {modalCategory && (
         <CategoryBudgetModal
+          key={modalCategory === "new" ? "new" : modalCategory.id || modalCategory.category}
           budgetItem={modalCategory === "new" ? null : modalCategory}
           existingCategories={existingCategoryNames}
           onClose={() => setModalCategory(null)}
           onSave={() => {
             setModalCategory(null);
+            setSuccessMsg("Anggaran kategori berhasil disimpan!");
+            setTimeout(() => setSuccessMsg(""), 4000);
             fetchBudget();
           }}
         />
@@ -406,6 +387,8 @@ export default function BudgetPage() {
           onClose={() => setModalTotal(false)}
           onSave={() => {
             setModalTotal(false);
+            setSuccessMsg("Total budget bulanan berhasil diperbarui!");
+            setTimeout(() => setSuccessMsg(""), 4000);
             fetchBudget();
           }}
         />
@@ -427,14 +410,6 @@ export default function BudgetPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleAutoAllocate}
-              disabled={actionLoading}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors disabled:opacity-60"
-              title="Otomatis isi anggaran per kategori dengan rumus 50/30/20"
-            >
-              <Sparkles size={14} /> Auto 50/30/20
-            </button>
             <button
               onClick={() => setModalCategory("new")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
@@ -637,20 +612,14 @@ export default function BudgetPage() {
             </div>
             <h4 className="font-bold text-[#28251d] text-sm">Belum Ada Anggaran Kategori</h4>
             <p className="text-xs text-[#7a7974] max-w-md mx-auto">
-              Tambahkan anggaran spesifik per kategori atau gunakan fitur <strong>Auto 50/30/20</strong> untuk mengatur seluruh kategori secara otomatis.
+              Klik tombol <strong>Tambah Anggaran Kategori</strong> di bawah untuk menetapkan batas belanja per kategori.
             </p>
-            <div className="flex gap-2.5 justify-center pt-2">
-              <button
-                onClick={handleAutoAllocate}
-                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
-              >
-                <Sparkles size={14} /> Terapkan Auto 50/30/20
-              </button>
+            <div className="flex justify-center pt-2">
               <button
                 onClick={() => setModalCategory("new")}
                 className="flex items-center gap-1.5 px-4 py-2 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
               >
-                <Plus size={14} /> Tambah Manual
+                <Plus size={14} /> Tambah Anggaran Kategori
               </button>
             </div>
           </div>

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-from database import get_db
+from database import get_db, engine, Base
 from models import User, Transaction, CategoryBudget
 from schemas import (
     BudgetUpdate,
@@ -14,6 +14,9 @@ from schemas import (
 )
 from auth import get_current_user
 from services.allocation_table import ALLOCATION_TABLE
+
+# Ensure database tables exist
+Base.metadata.create_all(bind=engine)
 
 router = APIRouter(prefix="/api/v1/budget", tags=["Budget"])
 
@@ -76,13 +79,22 @@ def _build_budget_response(current_user: User, db: Session) -> BudgetOut:
     budget_used = sum(category_spent.values())
     monthly_budget = float(current_user.monthly_budget or 0)
 
-    # 3. Category budgets from database
-    cat_budgets_db = (
-        db.query(CategoryBudget)
-        .filter(CategoryBudget.user_id == current_user.id)
-        .order_by(CategoryBudget.id.asc())
-        .all()
-    )
+    # 3. Category budgets from database (with fallback table creation if needed)
+    try:
+        cat_budgets_db = (
+            db.query(CategoryBudget)
+            .filter(CategoryBudget.user_id == current_user.id)
+            .order_by(CategoryBudget.id.asc())
+            .all()
+        )
+    except Exception:
+        Base.metadata.create_all(bind=engine)
+        cat_budgets_db = (
+            db.query(CategoryBudget)
+            .filter(CategoryBudget.user_id == current_user.id)
+            .order_by(CategoryBudget.id.asc())
+            .all()
+        )
 
     cat_budgets_out: List[CategoryBudgetOut] = []
     total_cat_budget = 0.0
@@ -162,7 +174,10 @@ def reset_budget(
 ):
     """Reset user's overall budget and category budgets."""
     current_user.monthly_budget = 0
-    db.query(CategoryBudget).filter(CategoryBudget.user_id == current_user.id).delete()
+    try:
+        db.query(CategoryBudget).filter(CategoryBudget.user_id == current_user.id).delete()
+    except Exception:
+        pass
     db.commit()
     db.refresh(current_user)
 
@@ -185,14 +200,18 @@ def create_or_update_category_budget(
     if not category:
         raise HTTPException(status_code=400, detail="Kategori tidak boleh kosong")
 
-    existing = (
-        db.query(CategoryBudget)
-        .filter(
-            CategoryBudget.user_id == current_user.id,
-            CategoryBudget.category == category,
+    try:
+        existing = (
+            db.query(CategoryBudget)
+            .filter(
+                CategoryBudget.user_id == current_user.id,
+                CategoryBudget.category == category,
+            )
+            .first()
         )
-        .first()
-    )
+    except Exception:
+        Base.metadata.create_all(bind=engine)
+        existing = None
 
     if existing:
         existing.amount = payload.amount
@@ -260,82 +279,5 @@ def delete_category_budget(
 
     db.delete(cb)
     db.commit()
-
-    return _build_budget_response(current_user, db)
-
-
-@router.post("/auto-allocate", response_model=BudgetOut)
-def auto_allocate_category_budgets(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Auto-generate category budgets according to 50/30/20 rule:
-    Uses current_user.monthly_budget (if set) or current month's actual income.
-    Allocates 80% to expenses (50% Needs + 30% Wants) and reserves 20% for Savings.
-    """
-    # 1. Determine base amount
-    today = datetime.now().date()
-    first_day = today.replace(day=1)
-    incomes = (
-        db.query(Transaction)
-        .filter(
-            Transaction.user_id == current_user.id,
-            Transaction.type == "income",
-            Transaction.tx_date >= first_day,
-            Transaction.tx_date <= today,
-        )
-        .all()
-    )
-    actual_income = sum(float(tx.amount) for tx in incomes) if incomes else 0.0
-
-    base_amount = float(current_user.monthly_budget or 0)
-    if base_amount <= 0:
-        base_amount = actual_income
-    if base_amount <= 0 and current_user.monthly_income and float(current_user.monthly_income) > 0:
-        base_amount = float(current_user.monthly_income)
-
-    if base_amount <= 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Tentukan Total Budget Bulanan atau catat Transaksi Pemasukan terlebih dahulu untuk menggunakan Auto Alokasi 50/30/20.",
-        )
-
-    # 2. If monthly_budget is not yet set on user, set it
-    if not current_user.monthly_budget or float(current_user.monthly_budget) <= 0:
-        current_user.monthly_budget = base_amount
-
-    # 3. Calculate category allocations
-    # Ideal allocations based on 50/30/20:
-    allocations = {
-        "Bills": round(base_amount * 0.15, 0),
-        "Food & Beverage": round(base_amount * 0.15, 0),
-        "Health": round(base_amount * 0.10, 0),
-        "Transport": round(base_amount * 0.10, 0),
-        "Shopping": round(base_amount * 0.10, 0),
-        "Entertainment": round(base_amount * 0.10, 0),
-        "Education": round(base_amount * 0.05, 0),
-        "Other": round(base_amount * 0.05, 0),
-    }
-
-    # 4. Upsert each category budget in DB
-    existing_items = (
-        db.query(CategoryBudget).filter(CategoryBudget.user_id == current_user.id).all()
-    )
-    existing_map = {item.category: item for item in existing_items}
-
-    for cat, amt in allocations.items():
-        if cat in existing_map:
-            existing_map[cat].amount = amt
-        else:
-            new_cb = CategoryBudget(
-                user_id=current_user.id,
-                category=cat,
-                amount=amt,
-            )
-            db.add(new_cb)
-
-    db.commit()
-    db.refresh(current_user)
 
     return _build_budget_response(current_user, db)
