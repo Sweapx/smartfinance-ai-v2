@@ -407,8 +407,7 @@ export default function BudgetPage() {
 
       const totalCatBudget = processedCatBudgets.reduce((sum, c) => sum + c.amount, 0);
       const effectiveBudget = budgetData.monthly_budget > 0 ? budgetData.monthly_budget : totalCatBudget;
-      const totalUsed = Object.values(categorySpent).reduce((a, b) => a + b, budgetData.budget_used || 0);
-      const used = Math.max(budgetData.budget_used || 0, totalUsed);
+      const used = Object.values(categorySpent).reduce((a, b) => a + b, 0);
 
       setBudget({
         ...budgetData,
@@ -553,12 +552,7 @@ export default function BudgetPage() {
             >
               <Pencil size={13} /> Atur Total Budget
             </button>
-            <button
-              onClick={() => setModalCategory("new")}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
-            >
-              <Plus size={14} /> Tambah Anggaran Kategori
-            </button>
+
             <button
               onClick={fetchBudget}
               className="p-2 rounded-lg hover:bg-[#f3f0ec] text-[#7a7974] transition-colors"
@@ -680,12 +674,7 @@ export default function BudgetPage() {
             >
               <Pencil size={13} /> Atur Total Budget
             </button>
-            <button
-              onClick={() => setModalCategory("new")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#01696f]/10 text-[#01696f] hover:bg-[#01696f]/20 rounded-lg text-xs font-semibold transition-colors"
-            >
-              <Plus size={13} /> Tambah Anggaran Kategori
-            </button>
+
           </div>
 
           {hasBudget && (
@@ -699,216 +688,7 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      {/* Critical / Warning Alerts */}
-      {overBudgetCategories.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-xs text-red-800 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-red-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-sm text-red-900">
-              Perhatian: {overBudgetCategories.length} Kategori Melebihi Anggaran!
-            </p>
-            <p className="mt-1">
-              Kategori berikut telah melampaui batas anggaran yang ditetapkan:{" "}
-              <strong>{overBudgetCategories.map((c) => c.category).join(", ")}</strong>. Pertimbangkan untuk mengurangi pengeluaran pada pos ini.
-            </p>
-          </div>
-        </div>
-      )}
 
-      {warningBudgetCategories.length > 0 && overBudgetCategories.length === 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-sm text-amber-900">
-              Peringatan: {warningBudgetCategories.length} Kategori Mendekati Batas (&gt;80%)
-            </p>
-            <p className="mt-1">
-              Pengeluaran untuk kategori{" "}
-              <strong>{warningBudgetCategories.map((c) => c.category).join(", ")}</strong> sudah
-              mencapai lebih dari 80% dari anggaran yang dialokasikan.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Section: Category Budgets List / Grid */}
-      <div className="bg-white rounded-xl border border-[#dcd9d5] p-5 md:p-6 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#f3f0ec] pb-4">
-          <div>
-            <h3 className="font-bold text-[#28251d] text-base">Alokasi Anggaran per Kategori</h3>
-            <p className="text-xs text-[#7a7974] mt-0.5">
-              Pantau realisasi belanja bulanan pada masing-masing kategori pengeluaran
-            </p>
-          </div>
-          <button
-            onClick={() => setModalCategory("new")}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold transition-colors self-start sm:self-auto"
-          >
-            <Plus size={13} /> Tambah Kategori
-          </button>
-        </div>
-
-        {categoryBudgets.length === 0 ? (
-          <div className="p-8 text-center bg-[#f9f8f5] rounded-xl border border-dashed border-[#dcd9d5] space-y-3">
-            <div className="w-12 h-12 rounded-full bg-[#01696f]/10 text-[#01696f] flex items-center justify-center mx-auto">
-              <Wallet size={24} />
-            </div>
-            <h4 className="font-bold text-[#28251d] text-sm">Belum Ada Anggaran Kategori</h4>
-            <p className="text-xs text-[#7a7974] max-w-md mx-auto">
-              Klik tombol <strong>Tambah Anggaran Kategori</strong> di bawah untuk menetapkan batas belanja per kategori, atau gunakan <strong>Atur Total Budget</strong>.
-            </p>
-            <div className="flex justify-center gap-3 pt-2 flex-wrap">
-              <button
-                onClick={() => setModalTotal(true)}
-                className="flex items-center gap-1.5 px-4 py-2 border border-[#dcd9d5] bg-white hover:bg-[#f3f0ec] text-[#28251d] rounded-lg text-xs font-semibold shadow-xs transition-colors"
-              >
-                <Pencil size={13} /> Atur Total Budget
-              </button>
-              <button
-                onClick={() => setModalCategory("new")}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#01696f] hover:bg-[#0c4e54] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors"
-              >
-                <Plus size={14} /> Tambah Anggaran Kategori
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {categoryBudgets.map((cb) => {
-              const Icon = CATEGORY_ICONS[cb.category] || MoreHorizontal;
-              const isOver = cb.percentage > 100;
-              const isWarn = cb.percentage >= 80 && cb.percentage <= 100;
-
-              return (
-                <div
-                  key={cb.id || cb.category}
-                  className="bg-[#fdfcfb] rounded-xl border border-[#e8e5df] p-4.5 hover:border-[#01696f]/40 transition-all shadow-sm flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Header Item */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                            cb.group === "Needs"
-                              ? "bg-blue-50 text-blue-700 border border-blue-200"
-                              : "bg-amber-50 text-amber-700 border border-amber-200"
-                          }`}
-                        >
-                          <Icon size={18} />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-[#28251d] text-sm leading-tight">
-                            {cb.category}
-                          </h4>
-                          <span className="text-[10px] font-semibold text-[#7a7974] uppercase tracking-wider">
-                            {cb.group === "Needs" ? "Kebutuhan (Needs)" : "Keinginan (Wants)"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Status Badge */}
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                          isOver
-                            ? "bg-red-50 text-red-700 border border-red-200"
-                            : isWarn
-                            ? "bg-amber-50 text-amber-700 border border-amber-200"
-                            : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isOver ? "bg-red-500" : isWarn ? "bg-amber-500" : "bg-emerald-500"
-                          }`}
-                        />
-                        {isOver ? "Terlampaui" : isWarn ? "Hampir Habis" : "Aman"}
-                      </span>
-                    </div>
-
-                    {/* Progress & Numbers */}
-                    <div className="space-y-1.5 mb-3">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-[#7a7974]">Terpakai</span>
-                        <span
-                          className={`tabular-nums ${
-                            isOver ? "text-red-600 font-bold" : "text-[#28251d]"
-                          }`}
-                        >
-                          {formatRupiah(cb.spent)} / {formatRupiah(cb.amount)}
-                        </span>
-                      </div>
-
-                      <div className="w-full bg-[#ece9e4] rounded-full h-2.5 overflow-hidden">
-                        <div
-                          className={`h-2.5 rounded-full transition-all duration-300 ${
-                            isOver ? "bg-red-500" : isWarn ? "bg-amber-500" : "bg-[#01696f]"
-                          }`}
-                          style={{ width: `${Math.min(100, cb.percentage)}%` }}
-                        />
-                      </div>
-
-                      <div className="flex justify-between text-[11px] text-[#7a7974] pt-0.5">
-                        <span>
-                          Sisa:{" "}
-                          <strong
-                            className={
-                              cb.remaining < 0
-                                ? "text-red-600 font-bold"
-                                : "text-emerald-700 font-semibold"
-                            }
-                          >
-                            {formatRupiah(cb.remaining)}
-                          </strong>
-                        </span>
-                        <span className="font-semibold">{cb.percentage.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#f3f0ec]">
-                    <button
-                      onClick={() => setModalCategory(cb)}
-                      className="p-1.5 rounded-md hover:bg-[#f3f0ec] text-[#7a7974] hover:text-[#01696f] text-xs flex items-center gap-1 font-medium transition-colors"
-                      title="Edit nominal"
-                    >
-                      <Pencil size={13} /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCategory(cb.id, cb.category)}
-                      className="p-1.5 rounded-md hover:bg-red-50 text-[#7a7974] hover:text-red-600 text-xs flex items-center gap-1 font-medium transition-colors"
-                      title="Hapus kategori ini"
-                    >
-                      <Trash2 size={13} /> Hapus
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Quick Add Unbudgeted Categories */}
-        {unbudgetedCategories.length > 0 && (
-          <div className="p-4 bg-[#f9f8f5] rounded-xl border border-[#e8e5df] space-y-2.5">
-            <p className="text-xs font-bold text-[#28251d] uppercase tracking-wider flex items-center gap-1.5">
-              <Plus size={13} className="text-[#01696f]" /> Kategori Belum Dianggarkan:
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {unbudgetedCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setModalCategory({ category: cat, amount: "" })}
-                  className="px-3 py-1.5 bg-white border border-[#dcd9d5] hover:border-[#01696f] hover:text-[#01696f] text-xs rounded-lg font-medium text-[#28251d] transition-all flex items-center gap-1 shadow-2xs"
-                >
-                  + {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
