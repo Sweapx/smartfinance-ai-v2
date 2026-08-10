@@ -97,7 +97,18 @@ def get_financial_health_score(db: Session = Depends(get_db), current_user: mode
     forecast = predict_monthly_expense(transactions)
     total_income = _estimate_total_income(db, current_user, transactions)
 
-    health = calculate_financial_health(forecast["predictions"], total_income)
+    # Gunakan data anggaran (CategoryBudget) jika ada, fallback ke prediksi (forecast)
+    try:
+        cat_budgets = db.query(models.CategoryBudget).filter(models.CategoryBudget.user_id == current_user.id).all()
+        budget_dict = {cb.category: float(cb.amount) for cb in cat_budgets}
+    except Exception:
+        budget_dict = {}
+
+    category_amounts = {}
+    for category, amount in forecast["predictions"].items():
+        category_amounts[category] = budget_dict.get(category, amount)
+
+    health = calculate_financial_health(category_amounts, total_income)
     top_recs = get_top_recommendations(health, limit=5)
 
     return {
@@ -150,7 +161,18 @@ def get_dashboard_summary(db: Session = Depends(get_db), current_user: models.Us
     transactions = _get_user_transactions(db, current_user.id)
     total_income = _estimate_total_income(db, current_user, transactions)
     forecast = predict_monthly_expense(transactions)
-    health = calculate_financial_health(forecast["predictions"], total_income)
+    
+    try:
+        cat_budgets = db.query(models.CategoryBudget).filter(models.CategoryBudget.user_id == current_user.id).all()
+        budget_dict = {cb.category: float(cb.amount) for cb in cat_budgets}
+    except Exception:
+        budget_dict = {}
+
+    category_amounts = {}
+    for category, amount in forecast["predictions"].items():
+        category_amounts[category] = budget_dict.get(category, amount)
+
+    health = calculate_financial_health(category_amounts, total_income)
 
     return {
         "current_month": {"income": income, "expense": expense, "balance": income - expense},
