@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+import logging
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from sqlalchemy import extract
@@ -9,6 +10,8 @@ from auth import get_current_user
 from services.lstm_service import predict_monthly_expense, CATEGORIES
 from services.recommendation_service import calculate_financial_health, get_top_recommendations
 from services.allocation_table import ALLOCATION_TABLE, MAIN_ALLOCATION_SUMMARY
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/predict", tags=["Forecasting & Recommendation"])
 
@@ -67,29 +70,41 @@ def _estimate_total_income(db: Session, user, transactions: list) -> float:
 @router.get("")
 def get_prediction(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """Forecasting Service -> hasil prediksi LSTM murni per kategori."""
-    transactions = _get_user_transactions(db, current_user.id)
-    result = predict_monthly_expense(transactions)
+    try:
+        transactions = _get_user_transactions(db, current_user.id)
+        result = predict_monthly_expense(transactions)
 
-    next_month = (datetime.now().replace(day=1) + timedelta(days=32)).strftime("%B %Y")
+        next_month = (datetime.now().replace(day=1) + timedelta(days=32)).strftime("%B %Y")
 
-    predictions_list = []
-    for category in CATEGORIES:
-        rule = ALLOCATION_TABLE.get(category, {})
-        predictions_list.append({
-            "category": category,
-            "predicted_amount": result["predictions"].get(category, 0),
-            "budget_limit": None,
-            "status": "safe",
-            "message": "",
-        })
+        predictions_list = []
+        for category in CATEGORIES:
+            predictions_list.append({
+                "category": category,
+                "predicted_amount": result["predictions"].get(category, 0),
+                "budget_limit": None,
+                "status": "safe",
+                "message": "",
+            })
 
-    return {
-        "prediction_month": next_month,
-        "cold_start": result["cold_start"],
-        "days_history": result["days_history"],
-        "total_predicted": result["total_predicted"],
-        "predictions": predictions_list,
-    }
+        return {
+            "prediction_month": next_month,
+            "cold_start": result["cold_start"],
+            "days_history": result["days_history"],
+            "total_predicted": result["total_predicted"],
+            "predictions": predictions_list,
+            "model_used": result.get("model_used", False),
+        }
+    except Exception as e:
+        logger.error(f"[predict] Error in get_prediction: {e}")
+        next_month = (datetime.now().replace(day=1) + timedelta(days=32)).strftime("%B %Y")
+        return {
+            "prediction_month": next_month,
+            "cold_start": True,
+            "days_history": 0,
+            "total_predicted": 0.0,
+            "model_used": False,
+            "predictions": [{"category": c, "predicted_amount": 0, "budget_limit": None, "status": "safe", "message": ""} for c in CATEGORIES],
+        }
 
 
 @router.get("/health-score")
