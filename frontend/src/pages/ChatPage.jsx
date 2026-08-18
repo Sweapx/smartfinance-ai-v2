@@ -17,7 +17,7 @@ function Message({ msg }) {
       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isBot ? "bg-[#01696f]" : "bg-[#dcd9d5]"}`}>
         {isBot ? <Bot size={16} color="white" /> : <User size={16} className="text-[#7a7974]" />}
       </div>
-      <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${isBot ? "bg-white border border-[#dcd9d5] text-[#28251d] rounded-tl-sm shadow-sm" : "bg-[#01696f] text-white rounded-tr-sm"}`}>
+      <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${isBot ? "bg-white border border-[#dcd9d5] text-[#28251d] rounded-tl-sm shadow-sm" : "bg-[#01696f] text-white rounded-tr-sm"}`}>
         {msg.content}
       </div>
     </div>
