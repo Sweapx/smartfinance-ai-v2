@@ -85,7 +85,13 @@ def predict_monthly_expense(transactions: list, user_income: float = None) -> di
     3. Normalisasi, build sequence, predict, denormalisasi jika model ada.
     """
     if not transactions:
-        return {"predictions": {c: 0.0 for c in CATEGORIES}, "cold_start": True, "days_history": 0}
+        return {
+            "predictions": {c: 0.0 for c in CATEGORIES}, 
+            "cold_start": True, 
+            "days_history": 0,
+            "total_predicted": 0.0,
+            "model_used": False
+        }
 
     df = pd.DataFrame(transactions)
     df["tx_date"] = pd.to_datetime(df["tx_date"])
