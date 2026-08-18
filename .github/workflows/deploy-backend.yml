@@ -6,17 +6,7 @@ on:
       - main
     paths:
       - 'backend/**'
-      - 'routers/**'
-      - 'services/**'
-      - 'main.py'
-      - 'database.py'
-      - 'models.py'
-      - 'schemas.py'
-      - 'auth.py'
-      - 'logging_config.py'
-      - 'requirements.txt'
-      - 'runtime.txt'
-      - 'startup.sh'
+      - '.github/workflows/deploy-backend.yml'
 
 jobs:
   deploy-backend:
@@ -32,11 +22,14 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          cd backend
+          pip install -r requirements.txt
 
       - name: Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
         with:
           app-name: smartfinance-api-v2
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
+          package: ./backend
+
