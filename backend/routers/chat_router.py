@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -27,11 +28,29 @@ def chat(payload: schemas.ChatRequest, db: Session = Depends(get_db), current_us
     health = calculate_financial_health(forecast["predictions"], total_income)
     top_recs = get_top_recommendations(health, limit=3)
 
+    now = datetime.now()
+    current_month_str = now.strftime("%Y-%m")
+    
+    current_month_expense = sum(t["amount"] for t in transactions if t["type"] == "expense" and t["tx_date"].startswith(current_month_str))
+    
+    category_breakdown = {}
+    for t in transactions:
+        if t["type"] == "expense" and t["tx_date"].startswith(current_month_str):
+            category_breakdown[t["category"]] = category_breakdown.get(t["category"], 0) + t["amount"]
+            
+    actual_this_month = {
+        "income": total_income,
+        "expense": current_month_expense,
+        "balance": total_income - current_month_expense,
+        "category_breakdown": category_breakdown
+    }
+
     system_prompt = build_system_prompt(
         user_name=current_user.name,
         health_result=health,
         predictions=forecast["predictions"],
         top_recommendations=top_recs,
+        actual_this_month=actual_this_month,
     )
 
     reply = get_chat_response(payload.message, system_prompt, chat_history=history)
